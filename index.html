@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -7,27 +8,16 @@
   <!-- Google Fonts: Playfair Display & Arima -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Arima:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#0f172a; /* slate-900 */
-      --card:#111827; /* gray-900 */
-      --text:#e5e7eb; /* gray-200 */
-      --muted:#9ca3af; /* gray-400 */
-      --accent:#22d3ee; /* cyan-400 */
-      --border:#1f2937; /* gray-800 */
-      --ok:#34d399; /* green-400 */
-      --warn:#fbbf24; /* amber-400 */
-      --err:#f87171; /* red-400 */
-    }
+    :root{ --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee; --border:#1f2937; --ok:#34d399; --warn:#fbbf24; --err:#f87171; }
     html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";}
-    h1{font-family:'Playfair Display', serif;font-size:1.92rem; /* +20% */ margin:.5rem 0 1rem 0;}
+    h1{font-family:'Playfair Display', serif;font-size:1.92rem;margin:.5rem 0 1rem 0}
     .wrap{max-width:1100px;margin:0 auto;padding:1rem}
     .controls{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
     .control-card{background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1rem}
     .control-card h2{font-size:1.05rem;margin:0 0 .5rem 0}
     label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.25rem}
     input[type="text"], select{width:100%;padding:.5rem .6rem;border-radius:.5rem;border:1px solid var(--border);background:#0b1020;color:var(--text)}
-    button{appearance:none;background:linear-gradient(90deg, #0891b2, #22d3ee);color:#082f49;border:none;border-radius:.6rem;padding:.5rem .8rem;font-weight:600;cursor:pointer}
-    button.secondary{background:#1f2937;color:var(--text);border:1px solid var(--border)}
+    button{appearance:none;background:linear-gradient(90deg,#0891b2,#22d3ee);color:#082f49;border:none;border-radius:.6rem;padding:.5rem .8rem;font-weight:600;cursor:pointer}
     .status{font-size:.9rem;color:var(--muted);margin-top:.5rem;white-space:pre-line}
 
     .group{margin:1rem 0;border:1px solid var(--border);border-radius:.75rem;overflow:hidden}
@@ -35,24 +25,26 @@
     .group-header h3{margin:0;font-size:1rem}
     .group-count{font-size:.85rem;color:var(--muted)}
     .entries{padding:.5rem .8rem}
-    .entry{border-top:1px dashed var(--border);padding:.6rem 0;line-height:1.45;font-family:'Arima', system-ui; font-size:1.2em; /* +20% */}
+
+    /* Entries: non-title text reduced by 20% (0.96em), title in Arima at 1.2em */
+    .entry{border-top:1px dashed var(--border);padding:.6rem 0;line-height:1.45;font-size:0.96em}
     .entry:first-child{border-top:none}
+    .entry-title{font-family:'Arima', system-ui; font-weight:700; font-size:1.2em}
+
     .meta{color:var(--muted)}
-    .bad{color:var(--err)}
-    .ok{color:var(--ok)}
-    .warn{color:var(--warn)}
     .hidden{display:none}
-    .flex{display:flex;gap:.5rem;align-items:center}
-    .row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+    .row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
     code{background:#0b1020;padding:.1rem .3rem;border-radius:.3rem;border:1px solid var(--border)}
     .link{color:var(--accent);text-decoration:none}
     .link:hover{text-decoration:underline}
     .mini-btn{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:.5rem;padding:.2rem .45rem;font-size:.85em;cursor:pointer}
-    .abstract{margin-top:.4rem;color:#cbd5e1}
+    .abstract{margin-top:.4rem;color:#cbd5e1;white-space:pre-wrap}
 
-    @media (max-width: 800px){
-      .controls{grid-template-columns:1fr}
-    }
+    .pmid-wrap{display:inline-flex;align-items:center;gap:.35rem}
+    .pmid-copy{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:.35rem;padding:.05rem .35rem;font-size:.95em;cursor:pointer}
+    .pmid-copy[disabled]{opacity:.6;cursor:not-allowed}
+
+    @media (max-width:800px){ .controls{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -92,15 +84,13 @@
   </div>
 
 <script>
-// --------------------------- Configuration ---------------------------
-const CONTACT_EMAIL = 'mailto:example@users.noreply'; // CrossRef politeness parameter
+const CONTACT_EMAIL = 'mailto:example@users.noreply';
 const CACHE_KEY = 'reflib_records_v1';
 
-// --------------------------- Initial Identifiers ---------------------------
 const initialIdentifiers = [
   { type: 'doi', id: 'https://doi.org/10.1093/nar/gkae241' },
   { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2024.0272' },
-  { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2024.0272' }, // duplicate
+  { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2024.0272' },
   { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1290059' },
   { type: 'doi', id: 'https://doi.org/10.1016/j.molcel.2023.05.018' },
   { type: 'doi', id: 'https://doi.org/10.1084/jem.2022065010252022c' },
@@ -116,140 +106,110 @@ const initialIdentifiers = [
   { type: 'doi', id: 'https://doi.org/10.1038/310207a0' }
 ];
 
-// --------------------------- Utility Functions ---------------------------
-function normalizeDOI(raw){
-  if(!raw) return null;
-  let s = String(raw).trim();
-  s = s.replace(/^https?:\/\/doi\.org\//i, '');
-  s = s.replace(/^doi:\s*/i, '');
-  s = s.replace(/[\s<>\[\]()\u200B]+$/g, '');
-  return s;
-}
+function normalizeDOI(raw){ if(!raw) return null; let s=String(raw).trim(); s=s.replace(/^https?:\/\/doi\.org\//i,''); s=s.replace(/^doi:\s*/i,''); s=s.replace(/[\s<>\[\]()\u200B]+$/g,''); return s; }
+function normalizePMID(raw){ if(!raw) return null; const m=String(raw).trim().match(/\d+/); return m?m[0]:null; }
+function detectIdentifier(raw){ const s=String(raw).trim(); if(!s) return null; if(/^https?:\/\/doi\.org\//i.test(s)||/^doi:/i.test(s)||/^10\./.test(s)) return {type:'doi',id:s}; const pmid=normalizePMID(s); if(pmid) return {type:'pmid',id:pmid}; return null; }
+function uniqKey(rec){ return (rec.doi?`doi:${rec.doi.toLowerCase()}`:'')+(rec.pmid?`|pmid:${rec.pmid}`:''); }
+function yearFromCrossRef(obj){ const c=[obj?.issued,obj?.published,obj?.['published-print'],obj?.['published-online'],obj?.created]; for(const k of c){ if(!k) continue; const y=Array.isArray(k['date-parts'])&&k['date-parts'][0][0]; if(y) return y; } if(obj?.created?.['date-time']){ const y=new Date(obj.created['date-time']).getFullYear(); if(y) return y; } return null; }
+function yearFromPubMedSummary(s){ const f=[s?.epubdate,s?.pubdate,s?.sortpubdate]; for(const v of f){ if(!v) continue; const m=String(v).match(/(19|20)\d{2}/); if(m) return parseInt(m[0],10); } return null; }
+function stripHtml(s){ return String(s||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); }
 
-function normalizePMID(raw){
-  if(!raw) return null;
-  const m = String(raw).trim().match(/\d+/);
-  return m ? m[0] : null;
-}
+// ---------- Title matching helpers ----------
+function normalizeTitle(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
+function titleWordSet(t){ return new Set(normalizeTitle(t).split(' ').filter(w=>w.length>2)); }
+function jaccard(a,b){ const ia = new Set(); for(const x of a){ if(b.has(x)) ia.add(x); } return ia.size / Math.max(1, (new Set([...a,...b])).size); }
+function scoreTitleMatch(t1,t2){ const s1=titleWordSet(t1), s2=titleWordSet(t2); return jaccard(s1,s2); }
 
-function detectIdentifier(raw){
-  const s = String(raw).trim();
-  if(!s) return null;
-  // DOI heuristics
-  if(/^https?:\/\/doi\.org\//i.test(s) || /^doi:/i.test(s) || /^10\./.test(s)){
-    return { type:'doi', id:s };
-  }
-  // PMID if all digits (or contains digits only)
-  const pmid = normalizePMID(s);
-  if(pmid){
-    return { type:'pmid', id:pmid };
-  }
-  return null;
-}
-
-function uniqKey(rec){
-  return (rec.doi ? `doi:${rec.doi.toLowerCase()}` : '') + (rec.pmid ? `|pmid:${rec.pmid}` : '');
-}
-
-function yearFromCrossRef(obj){
-  const candidates = [obj?.issued, obj?.published, obj?.['published-print'], obj?.['published-online'], obj?.created];
-  for(const c of candidates){
-    if(!c) continue;
-    const y = Array.isArray(c['date-parts']) && c['date-parts'][0][0];
-    if(y) return y;
-  }
-  if(obj?.created?.['date-time']){
-    const y = new Date(obj.created['date-time']).getFullYear();
-    if(y) return y;
-  }
-  return null;
-}
-
-function yearFromPubMedSummary(s){
-  const tryFields = [s?.epubdate, s?.pubdate, s?.sortpubdate];
-  for(const f of tryFields){
-    if(!f) continue;
-    const m = String(f).match(/(19|20)\d{2}/);
-    if(m) return parseInt(m[0], 10);
-  }
-  return null;
-}
-
-function stripHtml(s){
-  return String(s||'').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function formatAuthors(authors){
-  if(!Array.isArray(authors) || authors.length===0) return '—';
-  return authors.map(a => {
-    if(typeof a === 'string') return a;
-    const family = a.family || a.last || a.lastname || a.surname || '';
-    const given = a.given || a.first || a.forename || '';
-    const initials = given ? given.split(/\s+/).map(w=>w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
-    return (family && initials) ? `${family}, ${initials}` : (family || given || '—');
-  }).join('; ');
-}
-
-function displayAuthors(rec){
-  const authors = rec.authors || [];
-  if(!rec._authorsExpanded && authors.length>12){
-    const head = authors.slice(0,2);
-    const tail = authors.slice(-2);
-    return formatAuthors(head) + ' … ' + formatAuthors(tail) + ` `;
-  }
-  return formatAuthors(authors);
-}
-
-function bucketForYear(y){
-  if(!y) return 'Unknown Year';
-  const end = y + (5 - (y % 5 || 5));
-  const start = end - 4;
-  return `${start}-${end}`;
-}
-
-function compareBy(sortKey){
-  const collator = new Intl.Collator('en', { sensitivity:'base', numeric:true });
-  function val(rec){
-    switch(sortKey){
-      case 'title_az': return rec.title || '';
-      case 'title_za': return rec.title || '';
-      case 'journal_az': return rec.journal || '';
-      case 'author_az': return (rec.authors && rec.authors.length>0) ? (typeof rec.authors[0]==='string'?rec.authors[0]: (rec.authors[0].family||rec.authors[0].last||'')) : '';
-      case 'year_asc': return rec.year || 0;
-      case 'year_desc': return rec.year || 0;
-      default: return rec.year || 0;
-    }
-  }
-  return (a,b)=>{
-    const va = val(a), vb = val(b);
-    if(sortKey==='year_desc') return vb - va;
-    if(sortKey==='year_asc') return va - vb;
-    if(sortKey==='title_za') return collator.compare(vb, va);
-    return collator.compare(va, vb);
-  };
-}
-
-function mergeRecords(a,b){
-  const out = { ...a };
-  const fields = ['title','journal','year'];
-  for(const f of fields){ if(!out[f] && b && b[f]) out[f] = b[f]; }
-  if((!out.authors || out.authors.length===0) && b?.authors?.length){ out.authors = b.authors; }
-  out.doi  = out.doi  || b?.doi  || null;
-  out.pmid = out.pmid || b?.pmid || null;
-  out.sources = Array.from(new Set([...(a.sources||[]), ...(b?.sources||[])]));
-  // preserve cached abstract
-  out._abstract = out._abstract || b?._abstract || null;
+// ---------- PubMed helpers (refined selection) ----------
+async function pubmedSummaries(pmids){
+  const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmids.join(','))}&retmode=json`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`PubMed esummary ${res.status}`);
+  const json = await res.json();
+  const out = [];
+  for(const id of pmids){ if(json?.result?.[id]) out.push(json.result[id]); }
   return out;
 }
 
-// --------------------------- Fetchers ---------------------------
+async function fetchPubMedByDOI(doi, recTitle){
+  const term = encodeURIComponent(doi);
+  const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${term}`;
+  try{
+    const sres = await fetch(searchUrl);
+    if(!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
+    const sjson = await sres.json();
+    const pmids = sjson?.esearchresult?.idlist || [];
+    if(pmids.length===0) throw new Error('No PMID found for DOI');
+    // Pull summaries for all candidates
+    const summaries = await pubmedSummaries(pmids);
+    const ndoi = normalizeDOI(doi);
+    // 1) Prefer exact DOI match in articleids
+    let best = null;
+    for(const s of summaries){
+      const ids = Array.isArray(s?.articleids) ? s.articleids : [];
+      const doiId = ids.find(x=>x?.idtype==='doi');
+      if(doiId && normalizeDOI(doiId.value)===ndoi){ best = s; break; }
+    }
+    // 2) If no exact DOI match, prefer highest title similarity
+    if(!best && recTitle){
+      let maxScore = -1; let maxSummary = null;
+      for(const s of summaries){ const score = scoreTitleMatch(recTitle, s?.title||''); if(score>maxScore){ maxScore=score; maxSummary=s; } }
+      // Require reasonable threshold, else fall back to first
+      best = (maxScore>=0.5) ? maxSummary : summaries[0];
+    }
+    best = best || summaries[0];
+    // Build our summary result object
+    const title = best?.title || null;
+    const journal = best?.fulljournalname || best?.source || null;
+    const year = yearFromPubMedSummary(best);
+    const authors = Array.isArray(best?.authors) ? best.authors.map(a=>({family:a?.name?.split(' ')[0]||'', given:a?.name?.split(' ').slice(1).join(' ')||''})) : [];
+    let outDoi = null;
+    if(Array.isArray(best?.articleids)){
+      const doiId = best.articleids.find(x=>x?.idtype==='doi'); if(doiId?.value) outDoi = doiId.value;
+    }
+    const pmid = String(best?.uid||pmids[0]);
+    return { title, journal, year, authors, doi: outDoi || doi, pmid, sources:['PubMed'], raw:{pubmed:best} };
+  }catch(err){
+    return { title:null, journal:null, year:null, authors:[], doi, pmid:null, sources:['PubMed(error)'] };
+  }
+}
+
+async function fetchPMIDByMetadata(title, year){
+  if(!title) return null;
+  const t = encodeURIComponent(title);
+  const y = year ? `+AND+${encodeURIComponent(year)}[dp]` : '';
+  const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${t}${y}`;
+  try{
+    const sres = await fetch(searchUrl);
+    if(!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
+    const sjson = await sres.json();
+    const pmids = sjson?.esearchresult?.idlist || [];
+    if(pmids.length===0) return null;
+    // Choose best by title similarity from esummary
+    const summaries = await pubmedSummaries(pmids);
+    let maxScore = -1; let best = null;
+    for(const s of summaries){ const score = scoreTitleMatch(title, s?.title||''); if(score>maxScore){ maxScore=score; best=s; } }
+    return best?.uid ? String(best.uid) : pmids[0];
+  }catch(err){ return null; }
+}
+
+function mergeRecords(a,b){
+  const out={...a};
+  ['title','journal','year'].forEach(f=>{ if(!out[f] && b && b[f]) out[f]=b[f]; });
+  if((!out.authors||out.authors.length===0)&&b?.authors?.length) out.authors=b.authors;
+  out.doi=out.doi||b?.doi||null;
+  out.pmid=out.pmid||b?.pmid||null;
+  out.sources=Array.from(new Set([...(a.sources||[]),...(b?.sources||[])]));
+  out._abstract=out._abstract||b?._abstract||null;
+  return out;
+}
+
 async function fetchFromCrossRef(doi){
   const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}?mailto=${encodeURIComponent(CONTACT_EMAIL)}`;
   try{
     const res = await fetch(url);
     if(!res.ok) throw new Error(`CrossRef ${res.status}`);
-    const json = await res.json();
-    const it = json?.message;
+    const json = await res.json(); const it = json?.message;
     const title = Array.isArray(it?.title) ? it.title[0] : it?.title || null;
     const journal = Array.isArray(it?.['container-title']) ? it['container-title'][0] : it?.['container-title'] || it?.shortContainerTitle || null;
     const year = yearFromCrossRef(it);
@@ -257,7 +217,6 @@ async function fetchFromCrossRef(doi){
     const abstract = it?.abstract ? stripHtml(it.abstract) : null;
     return { title, journal, year, authors, doi, pmid:null, sources:['CrossRef'], raw:{crossref:it}, _abstract: abstract };
   }catch(err){
-    console.warn('CrossRef fetch error for', doi, err);
     return { title:null, journal:null, year:null, authors:[], doi, pmid:null, sources:['CrossRef(error)'], _abstract:null };
   }
 }
@@ -281,25 +240,6 @@ async function pubmedSummaryByPMID(pmid){
   return { title, journal, year, authors, doi, pmid, sources:['PubMed'], raw:{pubmed:s} };
 }
 
-async function fetchPubMedByDOI(doi){
-  const term = encodeURIComponent(doi);
-  const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${term}`;
-  try{
-    const sres = await fetch(searchUrl);
-    if(!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
-    const sjson = await sres.json();
-    const pmids = sjson?.esearchresult?.idlist || [];
-    if(pmids.length===0) throw new Error('No PMID found for DOI');
-    const pmid = pmids[0];
-    const summary = await pubmedSummaryByPMID(pmid);
-    summary.doi = summary.doi || doi;
-    return summary;
-  }catch(err){
-    console.warn('PubMed fetch error for DOI', doi, err);
-    return { title:null, journal:null, year:null, authors:[], doi, pmid:null, sources:['PubMed(error)'] };
-  }
-}
-
 async function fetchPubMedAbstractByPMID(pmid){
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=xml`;
   try{
@@ -311,32 +251,15 @@ async function fetchPubMedAbstractByPMID(pmid){
     const nodes = Array.from(xml.getElementsByTagName('AbstractText'));
     const content = nodes.map(n=>n.textContent.trim()).filter(Boolean).join('\n\n');
     return content || null;
-  }catch(err){
-    console.warn('PubMed efetch error for PMID', pmid, err);
-    return null;
-  }
+  }catch(err){ return null; }
 }
 
 async function ensureAbstract(rec){
   if(rec._abstract) return rec._abstract;
-  // try CrossRef raw if present
   const crAbs = rec?.raw?.crossref?.abstract ? stripHtml(rec.raw.crossref.abstract) : null;
   if(crAbs){ rec._abstract = crAbs; return rec._abstract; }
-  // PubMed by PMID if available
-  if(rec.pmid){
-    rec._abstract = await fetchPubMedAbstractByPMID(rec.pmid);
-    return rec._abstract;
-  }
-  // If no PMID, try to find it via DOI then fetch abstract
-  if(rec.doi){
-    const pm = await fetchPubMedByDOI(rec.doi);
-    if(pm?.pmid){
-      rec.pmid = pm.pmid;
-      const abs = await fetchPubMedAbstractByPMID(pm.pmid);
-      rec._abstract = abs;
-      return rec._abstract;
-    }
-  }
+  if(rec.pmid){ rec._abstract = await fetchPubMedAbstractByPMID(rec.pmid); return rec._abstract; }
+  if(rec.doi){ const pm = await fetchPubMedByDOI(rec.doi, rec.title); if(pm?.pmid){ rec.pmid = pm.pmid; rec._abstract = await fetchPubMedAbstractByPMID(pm.pmid); return rec._abstract; } }
   return null;
 }
 
@@ -344,254 +267,71 @@ async function resolveIdentifier({type,id}){
   if(type==='doi'){
     const doi = normalizeDOI(id);
     let a = await fetchFromCrossRef(doi);
-    if(!a.title || !a.journal || !a.year || a.authors.length===0){
-      const b = await fetchPubMedByDOI(doi);
-      a = mergeRecords(a,b);
-    }
+    if(!a.title || !a.journal || !a.year || a.authors.length===0){ const b = await fetchPubMedByDOI(doi, a.title); a = mergeRecords(a,b); }
     return a;
   }else if(type==='pmid'){
     const pmid = normalizePMID(id);
     let a = await pubmedSummaryByPMID(pmid);
-    if(a?.doi){
-      const b = await fetchFromCrossRef(a.doi);
-      a = mergeRecords(a,b);
-    }
+    if(a?.doi){ const b = await fetchFromCrossRef(a.doi); a = mergeRecords(a,b); }
     return a;
   }
   throw new Error('Unknown identifier type');
 }
 
 // --------------------------- State & Cache ---------------------------
-const state = {
-  records: [],
-  index: new Map(),
-  sort: 'year_desc',
-  query: '',
-};
+const state={ records:[], index:new Map(), sort:'year_desc', query:'' };
+function saveCache(){ try{ const minimal=state.records.map(r=>({ title:r.title,journal:r.journal,year:r.year,authors:r.authors, doi:r.doi,pmid:r.pmid,sources:r.sources,_abstract:r._abstract, _authorsExpanded:r._authorsExpanded||false,_abstractShown:r._abstractShown||false })); localStorage.setItem(CACHE_KEY, JSON.stringify(minimal)); }catch(e){ /* ignore */ }}
+function loadCache(){ try{ const raw=localStorage.getItem(CACHE_KEY); if(!raw) return false; const arr=JSON.parse(raw); if(!Array.isArray(arr)) return false; state.records=[]; state.index=new Map(); for(const r of arr){ addRecord(r); } return state.records.length>0; }catch(e){ return false; }}
+function addRecord(rec){ const key=uniqKey(rec); const existing=state.index.get(key); if(existing){ const merged=mergeRecords(existing,rec); merged._authorsExpanded=merged._authorsExpanded||existing._authorsExpanded||false; merged._abstractShown=merged._abstractShown||existing._abstractShown||false; state.index.set(key,merged); const idx=state.records.indexOf(existing); if(idx>=0) state.records[idx]=merged; return false; } else { state.index.set(key,rec); state.records.push(rec); return true; }}
+function filteredAndSorted(){ const q=state.query.trim().toLowerCase(); const sortKey=state.sort; const list=state.records.filter(r=>{ if(!q) return true; const fields=[r.title,r.journal,formatAuthors(r.authors), r.year?.toString(),r.doi,r.pmid]; return fields.some(f=>f && String(f).toLowerCase().includes(q)); }).slice(); const cmp=compareBy(sortKey); list.sort((a,b)=>{ return cmp(a,b); }); return list; }
 
-function saveCache(){
-  try{
-    const minimal = state.records.map(r=>({
-      title:r.title, journal:r.journal, year:r.year, authors:r.authors,
-      doi:r.doi, pmid:r.pmid, sources:r.sources, _abstract:r._abstract
-    }));
-    localStorage.setItem(CACHE_KEY, JSON.stringify(minimal));
-  }catch(e){ console.warn('Cache save failed', e); }
-}
-
-function loadCache(){
-  try{
-    const raw = localStorage.getItem(CACHE_KEY);
-    if(!raw) return false;
-    const arr = JSON.parse(raw);
-    if(!Array.isArray(arr)) return false;
-    state.records = [];
-    state.index = new Map();
-    for(const r of arr){ addRecord(r); }
-    return state.records.length>0;
-  }catch(e){ console.warn('Cache load failed', e); return false; }
-}
-
-function addRecord(rec){
-  const key = uniqKey(rec);
-  const existing = state.index.get(key);
-  if(existing){
-    const merged = mergeRecords(existing, rec);
-    state.index.set(key, merged);
-    const idx = state.records.indexOf(existing);
-    if(idx>=0) state.records[idx] = merged;
-    return false;
-  }else{
-    state.index.set(key, rec);
-    state.records.push(rec);
-    return true;
+// Background: resolve missing PMIDs once per entry
+async function resolveAllMissingPMIDs(){
+  for(const r of state.records){
+    if(!r.pmid){
+      let pmid = null;
+      if(r.doi){ const pm = await fetchPubMedByDOI(r.doi, r.title); pmid = pm?.pmid || null; }
+      if(!pmid && r.title){ pmid = await fetchPMIDByMetadata(r.title, r.year); }
+      if(pmid){ r.pmid = pmid; saveCache(); render(); }
+    }
   }
-}
-
-function filteredAndSorted(){
-  const q = state.query.trim().toLowerCase();
-  const sortKey = state.sort;
-  const list = state.records.filter(r=>{
-    if(!q) return true;
-    const fields = [r.title, r.journal, formatAuthors(r.authors), r.year?.toString(), r.doi, r.pmid];
-    return fields.some(f=>f && String(f).toLowerCase().includes(q));
-  }).slice();
-  const cmp = compareBy(sortKey);
-  list.sort((a,b)=>{
-    const ba = bucketForYear(a.year), bb = bucketForYear(b.year);
-    const ea = ba==='Unknown Year' ? -Infinity : parseInt(ba.split('-')[1],10);
-    const eb = bb==='Unknown Year' ? -Infinity : parseInt(bb.split('-')[1],10);
-    if(eb!==ea) return eb-ea;
-    return cmp(a,b);
-  });
-  return list;
 }
 
 // --------------------------- Rendering ---------------------------
-function render(){
-  const container = document.getElementById('groups');
-  container.innerHTML='';
-  const list = filteredAndSorted();
-  const buckets = new Map();
-  for(const r of list){
-    const b = bucketForYear(r.year);
-    if(!buckets.has(b)) buckets.set(b, []);
-    buckets.get(b).push(r);
-  }
-  const order = Array.from(buckets.keys()).sort((a,b)=>{
-    const ea = a==='Unknown Year'? -Infinity : parseInt(a.split('-')[1],10);
-    const eb = b==='Unknown Year'? -Infinity : parseInt(b.split('-')[1],10);
-    return eb-ea;
-  });
-  for(const label of order){
-    const groupDiv = document.createElement('div');
-    groupDiv.className = 'group';
-    const header = document.createElement('div');
-    header.className = 'group-header';
-    const h3 = document.createElement('h3');
-    h3.textContent = label;
-    const count = document.createElement('div');
-    count.className = 'group-count';
-    count.textContent = `${buckets.get(label).length} entr${buckets.get(label).length===1?'y':'ies'}`;
-    header.appendChild(h3); header.appendChild(count);
-    const entries = document.createElement('div');
-    entries.className = 'entries';
-    header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
+function bucketForYear(y){ if(!y) return 'Unknown Year'; const end = y + (5 - (y % 5 || 5)); const start = end - 4; return `${start}-${end}`; }
+function compareBy(sortKey){ const collator=new Intl.Collator('en',{sensitivity:'base',numeric:true}); function val(rec){ switch(sortKey){ case 'title_az': return rec.title||''; case 'title_za': return rec.title||''; case 'journal_az': return rec.journal||''; case 'author_az': return (rec.authors&&rec.authors.length>0)?(typeof rec.authors[0]==='string'?rec.authors[0]:(rec.authors[0].family||rec.authors[0].last||'')) : ''; case 'year_asc': return rec.year||0; case 'year_desc': return rec.year||0; default: return rec.year||0; } } return (a,b)=>{ const va=val(a), vb=val(b); if(sortKey==='year_desc') return vb-va; if(sortKey==='year_asc') return va-vb; if(sortKey==='title_za') return collator.compare(vb,va); return collator.compare(va,vb); }; }
 
-    for(const r of buckets.get(label)){
-      const e = document.createElement('div');
-      e.className = 'entry';
-      const title = r.title || '(title unavailable)';
-      const journal = r.journal || '—';
-      const year = r.year || '—';
+function formatAuthors(authors){ if(!Array.isArray(authors) || authors.length===0) return '—'; return authors.map(a => { if(typeof a === 'string') return a; const family = a.family || a.last || a.lastname || a.surname || ''; const given = a.given || a.first || a.forename || ''; const initials = given ? given.split(/\s+/).map(w=>w[0]).join('').replace(/[^A-Za-z]/g,'') : ''; return (family && initials) ? `${family}, ${initials}` : (family || given || '—'); }).join('; '); }
+function displayAuthors(rec){ const authors = rec.authors || []; if(!rec._authorsExpanded && authors.length>12){ const head = authors.slice(0,2); const tail = authors.slice(-2); return formatAuthors(head) + ' … ' + formatAuthors(tail) + ' '; } return formatAuthors(authors); }
 
-      const line = document.createElement('div');
-      line.innerHTML = `<span class="ok">•</span> <strong>${title}</strong>`;
+function render(){ const container=document.getElementById('groups'); container.innerHTML=''; const list=filteredAndSorted(); const sortKey=state.sort; const groupByYear = (sortKey==='year_desc' || sortKey==='year_asc'); if(groupByYear){ const buckets=new Map(); for(const r of list){ const b=bucketForYear(r.year); if(!buckets.has(b)) buckets.set(b, []); buckets.get(b).push(r); } const order=Array.from(buckets.keys()).sort((a,b)=>{ const ea = a==='Unknown Year'? -Infinity : parseInt(a.split('-')[1],10); const eb = b==='Unknown Year'? -Infinity : parseInt(b.split('-')[1],10); return (sortKey==='year_desc') ? (eb-ea) : (ea-eb); }); for(const label of order){ const groupDiv=document.createElement('div'); groupDiv.className='group'; const header=document.createElement('div'); header.className='group-header'; const h3=document.createElement('h3'); h3.textContent=label; const count=document.createElement('div'); count.className='group-count'; count.textContent=`${buckets.get(label).length} entr${buckets.get(label).length===1?'y':'ies'}`; header.appendChild(h3); header.appendChild(count); const entries=document.createElement('div'); entries.className='entries'; header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); }); for(const r of buckets.get(label)) entries.appendChild(renderEntry(r)); groupDiv.appendChild(header); groupDiv.appendChild(entries); container.appendChild(groupDiv); } } else { const groupDiv=document.createElement('div'); groupDiv.className='group'; const header=document.createElement('div'); header.className='group-header'; const h3=document.createElement('h3'); h3.textContent='All entries'; const count=document.createElement('div'); count.className='group-count'; count.textContent=`${list.length} entr${list.length===1?'y':'ies'}`; header.appendChild(h3); header.appendChild(count); const entries=document.createElement('div'); entries.className='entries'; header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); }); for(const r of list) entries.appendChild(renderEntry(r)); groupDiv.appendChild(header); groupDiv.appendChild(entries); container.appendChild(groupDiv); } }
 
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      const idsPieces = [];
-      if(r.doi){
-        const doiLink = `https://doi.org/${r.doi}`;
-        idsPieces.push(`DOI: <a class="link" href="${doiLink}" target="_blank" rel="noopener"><code>${r.doi}</code></a>`);
-      }
-      if(r.pmid){ idsPieces.push(`PMID: <code>${r.pmid}</code>`); }
-      const ids = idsPieces.join(' \u00B7 ');
-      const authorsDisplay = displayAuthors(r);
-      meta.innerHTML = `${authorsDisplay} \u00B7 <em>${journal}</em> \u00B7 ${year} ${ids?(' \u00B7 '+ids):''}`;
+function renderEntry(r){ const e=document.createElement('div'); e.className='entry'; const title=r.title||'(title unavailable)'; const journal=r.journal||'—'; const year=r.year||'—'; const line=document.createElement('div'); if(r.doi){ const doiLink=`https://doi.org/${r.doi}`; line.innerHTML=`<span class="ok">•</span> <a class="link entry-title" href="${doiLink}" target="_blank" rel="noopener">${title}</a>`; } else { line.innerHTML=`<span class="ok">•</span> <strong class="entry-title">${title}</strong>`; } const meta=document.createElement('div'); meta.className='meta'; const authorsDisplay=displayAuthors(r); meta.innerHTML=`${authorsDisplay} \u00B7 <em>${journal}</em> \u00B7 ${year}`; const controls=document.createElement('div'); controls.className='row';
+  // Always show PMID inline
+  const pmidWrap=document.createElement('div'); pmidWrap.className='pmid-wrap'; const label=document.createElement('span'); label.textContent='PMID:'; const codeEl=document.createElement('code'); codeEl.textContent=r.pmid || '—'; const copyBtn=document.createElement('button'); copyBtn.className='pmid-copy'; copyBtn.setAttribute('aria-label','Copy PMID'); copyBtn.title='Copy PMID'; copyBtn.textContent='\uD83D\uDCCB'; if(!r.pmid){ copyBtn.disabled=true; copyBtn.title='No PMID available'; } copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(String(r.pmid)); setStatus('PMID copied to clipboard'); setTimeout(()=>setStatus(''),1200); }catch(err){ setStatus('Unable to copy PMID'); setTimeout(()=>setStatus(''),1500); } }); pmidWrap.appendChild(label); pmidWrap.appendChild(codeEl); pmidWrap.appendChild(copyBtn); controls.appendChild(pmidWrap);
+  const authorsBtn=document.createElement('button'); authorsBtn.className='mini-btn'; const needsCollapse=(r.authors||[]).length>12; authorsBtn.textContent=(!r._authorsExpanded && needsCollapse)?'Expand authors':(needsCollapse?'Collapse authors':'Authors'); authorsBtn.disabled=!needsCollapse; authorsBtn.addEventListener('click',()=>{ r._authorsExpanded=!r._authorsExpanded; saveCache(); render(); });
+  const absBtn=document.createElement('button'); absBtn.className='mini-btn'; absBtn.textContent=r._abstractShown?'Hide abstract':'Show abstract'; const absContainer=document.createElement('div'); absContainer.className='abstract'+(r._abstractShown?'':' hidden'); absContainer.textContent=r._abstractShown?(r._abstract||'(No abstract available)'):''; absBtn.addEventListener('click', async ()=>{ if(!r._abstractShown){ setStatus('Fetching abstract...'); const abs=await ensureAbstract(r); r._abstractShown=true; r._abstract=abs||r._abstract||null; saveCache(); setStatus(''); } else { r._abstractShown=false; saveCache(); } render(); }); controls.appendChild(authorsBtn); controls.appendChild(absBtn); e.appendChild(line); e.appendChild(meta); e.appendChild(controls); e.appendChild(absContainer); return e; }
 
-      // Controls: authors expand/collapse & abstract toggle
-      const controls = document.createElement('div');
-      controls.className = 'row';
-      const authorsBtn = document.createElement('button');
-      authorsBtn.className = 'mini-btn';
-      const needsCollapse = (r.authors||[]).length>12;
-      authorsBtn.textContent = (!r._authorsExpanded && needsCollapse) ? 'Expand authors' : (needsCollapse ? 'Collapse authors' : 'Authors');
-      authorsBtn.disabled = !needsCollapse;
-      authorsBtn.addEventListener('click', ()=>{
-        r._authorsExpanded = !r._authorsExpanded;
-        render();
-      });
+function setStatus(msg){ const s=document.getElementById('status'); s.textContent=msg||''; }
 
-      const absBtn = document.createElement('button');
-      absBtn.className = 'mini-btn';
-      absBtn.textContent = r._abstractShown ? 'Hide abstract' : 'Show abstract';
-      absBtn.addEventListener('click', async ()=>{
-        if(!r._abstractShown){
-          setStatus('Fetching abstract...');
-          const abs = await ensureAbstract(r);
-          r._abstractShown = true;
-          saveCache();
-          setStatus('');
-          absContainer.textContent = abs ? abs : '(No abstract available)';
-          absContainer.classList.remove('hidden');
-        }else{
-          r._abstractShown = false;
-          absContainer.classList.add('hidden');
-          absBtn.textContent = 'Show abstract';
-        }
-        render();
-      });
-
-      controls.appendChild(authorsBtn);
-      controls.appendChild(absBtn);
-
-      const absContainer = document.createElement('div');
-      absContainer.className = 'abstract hidden';
-
-      e.appendChild(line);
-      e.appendChild(meta);
-      e.appendChild(controls);
-      e.appendChild(absContainer);
-      entries.appendChild(e);
-    }
-
-    groupDiv.appendChild(header);
-    groupDiv.appendChild(entries);
-    container.appendChild(groupDiv);
-  }
+async function init(){ const hadCache=loadCache(); if(hadCache){ render(); setStatus(`Loaded ${state.records.length} record(s) from local cache.`); // Resolve missing PMIDs in background
+  resolveAllMissingPMIDs(); return; }
+  setStatus('Fetching metadata from CrossRef with PubMed fallback...'); let errors=0; for(const ident of initialIdentifiers){ try{ const rec=await resolveIdentifier(ident); addRecord(rec); render(); setStatus(`Loaded ${state.records.length} record(s).`); }catch(err){ errors++; setStatus(`Loaded ${state.records.length} record(s). Errors so far: ${errors}`); } }
+  saveCache(); setStatus(`Loaded ${state.records.length} record(s). Ready.`);
+  // Background: refine PMIDs
+  resolveAllMissingPMIDs();
 }
 
-function setStatus(msg){
-  const s = document.getElementById('status');
-  s.textContent = msg || '';
-}
+// Search/sort/reset/add
+const searchEl=document.getElementById('search'); searchEl.addEventListener('input',(e)=>{ state.query=e.target.value; render(); });
+const sortEl=document.getElementById('sort'); sortEl.addEventListener('change',(e)=>{ state.sort=e.target.value; render(); });
+const resetEl=document.getElementById('reset'); resetEl.addEventListener('click',()=>{ state.query=''; searchEl.value=''; state.sort='year_desc'; sortEl.value='year_desc'; render(); });
+const idInput=document.getElementById('idInput'); async function addById(){ const raw=idInput.value.trim(); if(!raw){ setStatus('Please paste a DOI or a PubMed ID.'); return; } const ident=detectIdentifier(raw); if(!ident){ setStatus('Could not detect DOI or PMID.'); return; } setStatus('Adding entry...'); try{ const rec=await resolveIdentifier(ident); addRecord(rec); render(); saveCache(); setStatus('Entry added.'); idInput.value=''; // resolve missing PMIDs afterwards
+    resolveAllMissingPMIDs();
+  }catch(err){ setStatus('Failed to add entry.'); }}
 
-// --------------------------- Wiring ---------------------------
-async function init(){
-  // Try local cache first
-  const hadCache = loadCache();
-  if(hadCache){
-    render();
-    setStatus(`Loaded ${state.records.length} record(s) from local cache.`);
-    return; // skip fetching initial list
-  }
-  setStatus('Fetching metadata from CrossRef with PubMed fallback...');
-  let errors = 0;
-  for(const ident of initialIdentifiers){
-    try{
-      const rec = await resolveIdentifier(ident);
-      addRecord(rec); render(); setStatus(`Loaded ${state.records.length} record(s).`);
-    }catch(err){
-      console.warn('resolve error', ident, err);
-      errors++;
-      setStatus(`Loaded ${state.records.length} record(s). Errors so far: ${errors}`);
-    }
-  }
-  saveCache();
-  setStatus(`Loaded ${state.records.length} record(s). Ready.`);
-}
+document.getElementById('addId').addEventListener('click',addById); idInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') addById(); });
 
-// Search (filter)
-const searchEl = document.getElementById('search');
-searchEl.addEventListener('input', (e)=>{ state.query = e.target.value; render(); });
-
-// Sort
-const sortEl = document.getElementById('sort');
-sortEl.addEventListener('change', (e)=>{ state.sort = e.target.value; render(); });
-
-// Reset
-const resetEl = document.getElementById('reset');
-resetEl.addEventListener('click', ()=>{ state.query=''; searchEl.value=''; state.sort='year_desc'; sortEl.value='year_desc'; render(); });
-
-// Add DOI or PMID (single input)
-const idInput = document.getElementById('idInput');
-async function addById(){
-  const raw = idInput.value.trim();
-  if(!raw){ setStatus('Please paste a DOI or a PubMed ID.'); return; }
-  const ident = detectIdentifier(raw);
-  if(!ident){ setStatus('Could not detect DOI or PMID.'); return; }
-  setStatus('Adding entry...');
-  try{
-    const rec = await resolveIdentifier(ident);
-    addRecord(rec); render(); saveCache(); setStatus('Entry added.'); idInput.value='';
-  }catch(err){ setStatus('Failed to add entry.'); }
-}
-
-document.getElementById('addId').addEventListener('click', addById);
-idInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addById(); });
-
-// Kick off
 init();
 </script>
 </body>
