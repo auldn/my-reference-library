@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Reference Library</title>
+  <!-- Google Fonts: Playfair Display & Arima -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Arima:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f172a; /* slate-900 */
+      --card:#111827; /* gray-900 */
+      --text:#e5e7eb; /* gray-200 */
+      --muted:#9ca3af; /* gray-400 */
+      --accent:#22d3ee; /* cyan-400 */
+      --border:#1f2937; /* gray-800 */
+      --ok:#34d399; /* green-400 */
+      --warn:#fbbf24; /* amber-400 */
+      --err:#f87171; /* red-400 */
+    }
+    html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";}
+    h1{font-family:'Playfair Display', serif;font-size:1.92rem; /* +20% */ margin:.5rem 0 1rem 0;}
+    .wrap{max-width:1100px;margin:0 auto;padding:1rem}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+    .control-card{background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1rem}
+    .control-card h2{font-size:1.05rem;margin:0 0 .5rem 0}
+    label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.25rem}
+    input[type="text"], select{width:100%;padding:.5rem .6rem;border-radius:.5rem;border:1px solid var(--border);background:#0b1020;color:var(--text)}
+    button{appearance:none;background:linear-gradient(90deg, #0891b2, #22d3ee);color:#082f49;border:none;border-radius:.6rem;padding:.5rem .8rem;font-weight:600;cursor:pointer}
+    button.secondary{background:#1f2937;color:var(--text);border:1px solid var(--border)}
+    .status{font-size:.9rem;color:var(--muted);margin-top:.5rem;white-space:pre-line}
+
+    .group{margin:1rem 0;border:1px solid var(--border);border-radius:.75rem;overflow:hidden}
+    .group-header{display:flex;justify-content:space-between;align-items:center;background:#0b1020;padding:.6rem .8rem;cursor:pointer}
+    .group-header h3{margin:0;font-size:1rem}
+    .group-count{font-size:.85rem;color:var(--muted)}
+    .entries{padding:.5rem .8rem}
+    .entry{border-top:1px dashed var(--border);padding:.6rem 0;line-height:1.45;font-family:'Arima', system-ui; font-size:1.2em; /* +20% */}
+    .entry:first-child{border-top:none}
+    .meta{color:var(--muted)}
+    .bad{color:var(--err)}
+    .ok{color:var(--ok)}
+    .warn{color:var(--warn)}
+    .hidden{display:none}
+    .flex{display:flex;gap:.5rem;align-items:center}
+    .row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+    code{background:#0b1020;padding:.1rem .3rem;border-radius:.3rem;border:1px solid var(--border)}
+    .link{color:var(--accent);text-decoration:none}
+    .link:hover{text-decoration:underline}
+    .mini-btn{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:.5rem;padding:.2rem .45rem;font-size:.85em;cursor:pointer}
+    .abstract{margin-top:.4rem;color:#cbd5e1}
+
+    @media (max-width: 800px){
+      .controls{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>My Reference Library</h1>
+    <div class="controls">
+      <div class="control-card">
+        <h2>Find & Sort</h2>
+        <label for="search">Search (title, author, journal, year, DOI/PMID)</label>
+        <input id="search" type="text" placeholder="Type to filter entries..." />
+        <div class="row" style="margin-top:.5rem">
+          <label for="sort" style="margin:0">Sort</label>
+          <select id="sort">
+            <option value="year_desc">Year (newest first)</option>
+            <option value="year_asc">Year (oldest first)</option>
+            <option value="title_az">Title (A→Z)</option>
+            <option value="title_za">Title (Z→A)</option>
+            <option value="journal_az">Journal (A→Z)</option>
+            <option value="author_az">Author (A→Z, first author)</option>
+          </select>
+          <button id="reset">Reset</button>
+        </div>
+        <div id="status" class="status">Loading metadata...</div>
+      </div>
+      <div class="control-card">
+        <h2>Add Entries</h2>
+        <label for="idInput">Add by DOI or PubMed ID (PMID)</label>
+        <div class="row">
+          <input id="idInput" type="text" placeholder="Paste DOI (e.g., 10.1038/...) or PMID (digits)" />
+          <button id="addId">Add</button>
+        </div>
+        <div class="status">Tip: Paste a DOI (full URL or bare) or a PMID. The dashboard auto-detects and fetches metadata (CrossRef → PubMed fallback).</div>
+      </div>
+    </div>
+
+    <div id="groups"></div>
+  </div>
+
+<script>
+// --------------------------- Configuration ---------------------------
+const CONTACT_EMAIL = 'mailto:example@users.noreply'; // CrossRef politeness parameter
+const CACHE_KEY = 'reflib_records_v1';
+
+// --------------------------- Initial Identifiers ---------------------------
+const initialIdentifiers = [
+  { type: 'doi', id: 'https://doi.org/10.1093/nar/gkae241' },
+  { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2024.0272' },
+  { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2024.0272' }, // duplicate
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1290059' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.molcel.2023.05.018' },
+  { type: 'doi', id: 'https://doi.org/10.1084/jem.2022065010252022c' },
+  { type: 'doi', id: 'https://doi.org/10.1084/jem.20220650' },
+  { type: 'doi', id: 'https://doi.org/10.21769/BioProtoc.4464' },
+  { type: 'doi', id: 'https://doi.org/10.1126/science.abj8222' },
+  { type: 'doi', id: 'https://doi.org/10.1126/science.abd4250' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41596-018-0025-6' },
+  { type: 'doi', id: 'https://doi.org/10.1371/journal.ppat.1007114' },
+  { type: 'doi', id: 'https://doi.org/10.1128/JVI.79.24.15323-15330.2005' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.0407320101' },
+  { type: 'doi', id: 'https://doi.org/10.1128/JVI.35.3.603-618.1980' },
+  { type: 'doi', id: 'https://doi.org/10.1038/310207a0' }
+];
+
+// --------------------------- Utility Functions ---------------------------
+function normalizeDOI(raw){
+  if(!raw) return null;
+  let s = String(raw).trim();
+  s = s.replace(/^https?:\/\/doi\.org\//i, '');
+  s = s.replace(/^doi:\s*/i, '');
+  s = s.replace(/[\s<>\[\]()\u200B]+$/g, '');
+  return s;
+}
+
+function normalizePMID(raw){
+  if(!raw) return null;
+  const m = String(raw).trim().match(/\d+/);
+  return m ? m[0] : null;
+}
+
+function detectIdentifier(raw){
+  const s = String(raw).trim();
+  if(!s) return null;
+  // DOI heuristics
+  if(/^https?:\/\/doi\.org\//i.test(s) || /^doi:/i.test(s) || /^10\./.test(s)){
+    return { type:'doi', id:s };
+  }
+  // PMID if all digits (or contains digits only)
+  const pmid = normalizePMID(s);
+  if(pmid){
+    return { type:'pmid', id:pmid };
+  }
+  return null;
+}
+
+function uniqKey(rec){
+  return (rec.doi ? `doi:${rec.doi.toLowerCase()}` : '') + (rec.pmid ? `|pmid:${rec.pmid}` : '');
+}
+
+function yearFromCrossRef(obj){
+  const candidates = [obj?.issued, obj?.published, obj?.['published-print'], obj?.['published-online'], obj?.created];
+  for(const c of candidates){
+    if(!c) continue;
+    const y = Array.isArray(c['date-parts']) && c['date-parts'][0][0];
+    if(y) return y;
+  }
+  if(obj?.created?.['date-time']){
+    const y = new Date(obj.created['date-time']).getFullYear();
+    if(y) return y;
+  }
+  return null;
+}
+
+function yearFromPubMedSummary(s){
+  const tryFields = [s?.epubdate, s?.pubdate, s?.sortpubdate];
+  for(const f of tryFields){
+    if(!f) continue;
+    const m = String(f).match(/(19|20)\d{2}/);
+    if(m) return parseInt(m[0], 10);
+  }
+  return null;
+}
+
+function stripHtml(s){
+  return String(s||'').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function formatAuthors(authors){
+  if(!Array.isArray(authors) || authors.length===0) return '—';
+  return authors.map(a => {
+    if(typeof a === 'string') return a;
+    const family = a.family || a.last || a.lastname || a.surname || '';
+    const given = a.given || a.first || a.forename || '';
+    const initials = given ? given.split(/\s+/).map(w=>w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
+    return (family && initials) ? `${family}, ${initials}` : (family || given || '—');
+  }).join('; ');
+}
+
+function displayAuthors(rec){
+  const authors = rec.authors || [];
+  if(!rec._authorsExpanded && authors.length>12){
+    const head = authors.slice(0,2);
+    const tail = authors.slice(-2);
+    return formatAuthors(head) + ' … ' + formatAuthors(tail) + ` `;
+  }
+  return formatAuthors(authors);
+}
+
+function bucketForYear(y){
+  if(!y) return 'Unknown Year';
+  const end = y + (5 - (y % 5 || 5));
+  const start = end - 4;
+  return `${start}-${end}`;
+}
+
+function compareBy(sortKey){
+  const collator = new Intl.Collator('en', { sensitivity:'base', numeric:true });
+  function val(rec){
+    switch(sortKey){
+      case 'title_az': return rec.title || '';
+      case 'title_za': return rec.title || '';
+      case 'journal_az': return rec.journal || '';
+      case 'author_az': return (rec.authors && rec.authors.length>0) ? (typeof rec.authors[0]==='string'?rec.authors[0]: (rec.authors[0].family||rec.authors[0].last||'')) : '';
+      case 'year_asc': return rec.year || 0;
+      case 'year_desc': return rec.year || 0;
+      default: return rec.year || 0;
+    }
+  }
+  return (a,b)=>{
+    const va = val(a), vb = val(b);
+    if(sortKey==='year_desc') return vb - va;
+    if(sortKey==='year_asc') return va - vb;
+    if(sortKey==='title_za') return collator.compare(vb, va);
+    return collator.compare(va, vb);
+  };
+}
+
+function mergeRecords(a,b){
+  const out = { ...a };
+  const fields = ['title','journal','year'];
+  for(const f of fields){ if(!out[f] && b && b[f]) out[f] = b[f]; }
+  if((!out.authors || out.authors.length===0) && b?.authors?.length){ out.authors = b.authors; }
+  out.doi  = out.doi  || b?.doi  || null;
+  out.pmid = out.pmid || b?.pmid || null;
+  out.sources = Array.from(new Set([...(a.sources||[]), ...(b?.sources||[])]));
+  // preserve cached abstract
+  out._abstract = out._abstract || b?._abstract || null;
+  return out;
+}
+
+// --------------------------- Fetchers ---------------------------
+async function fetchFromCrossRef(doi){
+  const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}?mailto=${encodeURIComponent(CONTACT_EMAIL)}`;
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(`CrossRef ${res.status}`);
+    const json = await res.json();
+    const it = json?.message;
+    const title = Array.isArray(it?.title) ? it.title[0] : it?.title || null;
+    const journal = Array.isArray(it?.['container-title']) ? it['container-title'][0] : it?.['container-title'] || it?.shortContainerTitle || null;
+    const year = yearFromCrossRef(it);
+    const authors = Array.isArray(it?.author) ? it.author.map(a=>({family:a.family, given:a.given})) : [];
+    const abstract = it?.abstract ? stripHtml(it.abstract) : null;
+    return { title, journal, year, authors, doi, pmid:null, sources:['CrossRef'], raw:{crossref:it}, _abstract: abstract };
+  }catch(err){
+    console.warn('CrossRef fetch error for', doi, err);
+    return { title:null, journal:null, year:null, authors:[], doi, pmid:null, sources:['CrossRef(error)'], _abstract:null };
+  }
+}
+
+async function pubmedSummaryByPMID(pmid){
+  const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=json`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`PubMed esummary ${res.status}`);
+  const json = await res.json();
+  const s = json?.result?.[pmid];
+  if(!s) throw new Error('No esummary result');
+  const title = s?.title || null;
+  const journal = s?.fulljournalname || s?.source || null;
+  const year = yearFromPubMedSummary(s);
+  const authors = Array.isArray(s?.authors) ? s.authors.map(a=>({family:a?.name?.split(' ')[0]||'', given:a?.name?.split(' ').slice(1).join(' ')||''})) : [];
+  let doi = null;
+  if(Array.isArray(s?.articleids)){
+    const doiId = s.articleids.find(x=>x?.idtype==='doi');
+    if(doiId?.value) doi = doiId.value;
+  }
+  return { title, journal, year, authors, doi, pmid, sources:['PubMed'], raw:{pubmed:s} };
+}
+
+async function fetchPubMedByDOI(doi){
+  const term = encodeURIComponent(doi);
+  const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${term}`;
+  try{
+    const sres = await fetch(searchUrl);
+    if(!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
+    const sjson = await sres.json();
+    const pmids = sjson?.esearchresult?.idlist || [];
+    if(pmids.length===0) throw new Error('No PMID found for DOI');
+    const pmid = pmids[0];
+    const summary = await pubmedSummaryByPMID(pmid);
+    summary.doi = summary.doi || doi;
+    return summary;
+  }catch(err){
+    console.warn('PubMed fetch error for DOI', doi, err);
+    return { title:null, journal:null, year:null, authors:[], doi, pmid:null, sources:['PubMed(error)'] };
+  }
+}
+
+async function fetchPubMedAbstractByPMID(pmid){
+  const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=xml`;
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(`PubMed efetch ${res.status}`);
+    const text = await res.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, 'application/xml');
+    const nodes = Array.from(xml.getElementsByTagName('AbstractText'));
+    const content = nodes.map(n=>n.textContent.trim()).filter(Boolean).join('\n\n');
+    return content || null;
+  }catch(err){
+    console.warn('PubMed efetch error for PMID', pmid, err);
+    return null;
+  }
+}
+
+async function ensureAbstract(rec){
+  if(rec._abstract) return rec._abstract;
+  // try CrossRef raw if present
+  const crAbs = rec?.raw?.crossref?.abstract ? stripHtml(rec.raw.crossref.abstract) : null;
+  if(crAbs){ rec._abstract = crAbs; return rec._abstract; }
+  // PubMed by PMID if available
+  if(rec.pmid){
+    rec._abstract = await fetchPubMedAbstractByPMID(rec.pmid);
+    return rec._abstract;
+  }
+  // If no PMID, try to find it via DOI then fetch abstract
+  if(rec.doi){
+    const pm = await fetchPubMedByDOI(rec.doi);
+    if(pm?.pmid){
+      rec.pmid = pm.pmid;
+      const abs = await fetchPubMedAbstractByPMID(pm.pmid);
+      rec._abstract = abs;
+      return rec._abstract;
+    }
+  }
+  return null;
+}
+
+async function resolveIdentifier({type,id}){
+  if(type==='doi'){
+    const doi = normalizeDOI(id);
+    let a = await fetchFromCrossRef(doi);
+    if(!a.title || !a.journal || !a.year || a.authors.length===0){
+      const b = await fetchPubMedByDOI(doi);
+      a = mergeRecords(a,b);
+    }
+    return a;
+  }else if(type==='pmid'){
+    const pmid = normalizePMID(id);
+    let a = await pubmedSummaryByPMID(pmid);
+    if(a?.doi){
+      const b = await fetchFromCrossRef(a.doi);
+      a = mergeRecords(a,b);
+    }
+    return a;
+  }
+  throw new Error('Unknown identifier type');
+}
+
+// --------------------------- State & Cache ---------------------------
+const state = {
+  records: [],
+  index: new Map(),
+  sort: 'year_desc',
+  query: '',
+};
+
+function saveCache(){
+  try{
+    const minimal = state.records.map(r=>({
+      title:r.title, journal:r.journal, year:r.year, authors:r.authors,
+      doi:r.doi, pmid:r.pmid, sources:r.sources, _abstract:r._abstract
+    }));
+    localStorage.setItem(CACHE_KEY, JSON.stringify(minimal));
+  }catch(e){ console.warn('Cache save failed', e); }
+}
+
+function loadCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(!raw) return false;
+    const arr = JSON.parse(raw);
+    if(!Array.isArray(arr)) return false;
+    state.records = [];
+    state.index = new Map();
+    for(const r of arr){ addRecord(r); }
+    return state.records.length>0;
+  }catch(e){ console.warn('Cache load failed', e); return false; }
+}
+
+function addRecord(rec){
+  const key = uniqKey(rec);
+  const existing = state.index.get(key);
+  if(existing){
+    const merged = mergeRecords(existing, rec);
+    state.index.set(key, merged);
+    const idx = state.records.indexOf(existing);
+    if(idx>=0) state.records[idx] = merged;
+    return false;
+  }else{
+    state.index.set(key, rec);
+    state.records.push(rec);
+    return true;
+  }
+}
+
+function filteredAndSorted(){
+  const q = state.query.trim().toLowerCase();
+  const sortKey = state.sort;
+  const list = state.records.filter(r=>{
+    if(!q) return true;
+    const fields = [r.title, r.journal, formatAuthors(r.authors), r.year?.toString(), r.doi, r.pmid];
+    return fields.some(f=>f && String(f).toLowerCase().includes(q));
+  }).slice();
+  const cmp = compareBy(sortKey);
+  list.sort((a,b)=>{
+    const ba = bucketForYear(a.year), bb = bucketForYear(b.year);
+    const ea = ba==='Unknown Year' ? -Infinity : parseInt(ba.split('-')[1],10);
+    const eb = bb==='Unknown Year' ? -Infinity : parseInt(bb.split('-')[1],10);
+    if(eb!==ea) return eb-ea;
+    return cmp(a,b);
+  });
+  return list;
+}
+
+// --------------------------- Rendering ---------------------------
+function render(){
+  const container = document.getElementById('groups');
+  container.innerHTML='';
+  const list = filteredAndSorted();
+  const buckets = new Map();
+  for(const r of list){
+    const b = bucketForYear(r.year);
+    if(!buckets.has(b)) buckets.set(b, []);
+    buckets.get(b).push(r);
+  }
+  const order = Array.from(buckets.keys()).sort((a,b)=>{
+    const ea = a==='Unknown Year'? -Infinity : parseInt(a.split('-')[1],10);
+    const eb = b==='Unknown Year'? -Infinity : parseInt(b.split('-')[1],10);
+    return eb-ea;
+  });
+  for(const label of order){
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'group';
+    const header = document.createElement('div');
+    header.className = 'group-header';
+    const h3 = document.createElement('h3');
+    h3.textContent = label;
+    const count = document.createElement('div');
+    count.className = 'group-count';
+    count.textContent = `${buckets.get(label).length} entr${buckets.get(label).length===1?'y':'ies'}`;
+    header.appendChild(h3); header.appendChild(count);
+    const entries = document.createElement('div');
+    entries.className = 'entries';
+    header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
+
+    for(const r of buckets.get(label)){
+      const e = document.createElement('div');
+      e.className = 'entry';
+      const title = r.title || '(title unavailable)';
+      const journal = r.journal || '—';
+      const year = r.year || '—';
+
+      const line = document.createElement('div');
+      line.innerHTML = `<span class="ok">•</span> <strong>${title}</strong>`;
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const idsPieces = [];
+      if(r.doi){
+        const doiLink = `https://doi.org/${r.doi}`;
+        idsPieces.push(`DOI: <a class="link" href="${doiLink}" target="_blank" rel="noopener"><code>${r.doi}</code></a>`);
+      }
+      if(r.pmid){ idsPieces.push(`PMID: <code>${r.pmid}</code>`); }
+      const ids = idsPieces.join(' \u00B7 ');
+      const authorsDisplay = displayAuthors(r);
+      meta.innerHTML = `${authorsDisplay} \u00B7 <em>${journal}</em> \u00B7 ${year} ${ids?(' \u00B7 '+ids):''}`;
+
+      // Controls: authors expand/collapse & abstract toggle
+      const controls = document.createElement('div');
+      controls.className = 'row';
+      const authorsBtn = document.createElement('button');
+      authorsBtn.className = 'mini-btn';
+      const needsCollapse = (r.authors||[]).length>12;
+      authorsBtn.textContent = (!r._authorsExpanded && needsCollapse) ? 'Expand authors' : (needsCollapse ? 'Collapse authors' : 'Authors');
+      authorsBtn.disabled = !needsCollapse;
+      authorsBtn.addEventListener('click', ()=>{
+        r._authorsExpanded = !r._authorsExpanded;
+        render();
+      });
+
+      const absBtn = document.createElement('button');
+      absBtn.className = 'mini-btn';
+      absBtn.textContent = r._abstractShown ? 'Hide abstract' : 'Show abstract';
+      absBtn.addEventListener('click', async ()=>{
+        if(!r._abstractShown){
+          setStatus('Fetching abstract...');
+          const abs = await ensureAbstract(r);
+          r._abstractShown = true;
+          saveCache();
+          setStatus('');
+          absContainer.textContent = abs ? abs : '(No abstract available)';
+          absContainer.classList.remove('hidden');
+        }else{
+          r._abstractShown = false;
+          absContainer.classList.add('hidden');
+          absBtn.textContent = 'Show abstract';
+        }
+        render();
+      });
+
+      controls.appendChild(authorsBtn);
+      controls.appendChild(absBtn);
+
+      const absContainer = document.createElement('div');
+      absContainer.className = 'abstract hidden';
+
+      e.appendChild(line);
+      e.appendChild(meta);
+      e.appendChild(controls);
+      e.appendChild(absContainer);
+      entries.appendChild(e);
+    }
+
+    groupDiv.appendChild(header);
+    groupDiv.appendChild(entries);
+    container.appendChild(groupDiv);
+  }
+}
+
+function setStatus(msg){
+  const s = document.getElementById('status');
+  s.textContent = msg || '';
+}
+
+// --------------------------- Wiring ---------------------------
+async function init(){
+  // Try local cache first
+  const hadCache = loadCache();
+  if(hadCache){
+    render();
+    setStatus(`Loaded ${state.records.length} record(s) from local cache.`);
+    return; // skip fetching initial list
+  }
+  setStatus('Fetching metadata from CrossRef with PubMed fallback...');
+  let errors = 0;
+  for(const ident of initialIdentifiers){
+    try{
+      const rec = await resolveIdentifier(ident);
+      addRecord(rec); render(); setStatus(`Loaded ${state.records.length} record(s).`);
+    }catch(err){
+      console.warn('resolve error', ident, err);
+      errors++;
+      setStatus(`Loaded ${state.records.length} record(s). Errors so far: ${errors}`);
+    }
+  }
+  saveCache();
+  setStatus(`Loaded ${state.records.length} record(s). Ready.`);
+}
+
+// Search (filter)
+const searchEl = document.getElementById('search');
+searchEl.addEventListener('input', (e)=>{ state.query = e.target.value; render(); });
+
+// Sort
+const sortEl = document.getElementById('sort');
+sortEl.addEventListener('change', (e)=>{ state.sort = e.target.value; render(); });
+
+// Reset
+const resetEl = document.getElementById('reset');
+resetEl.addEventListener('click', ()=>{ state.query=''; searchEl.value=''; state.sort='year_desc'; sortEl.value='year_desc'; render(); });
+
+// Add DOI or PMID (single input)
+const idInput = document.getElementById('idInput');
+async function addById(){
+  const raw = idInput.value.trim();
+  if(!raw){ setStatus('Please paste a DOI or a PubMed ID.'); return; }
+  const ident = detectIdentifier(raw);
+  if(!ident){ setStatus('Could not detect DOI or PMID.'); return; }
+  setStatus('Adding entry...');
+  try{
+    const rec = await resolveIdentifier(ident);
+    addRecord(rec); render(); saveCache(); setStatus('Entry added.'); idInput.value='';
+  }catch(err){ setStatus('Failed to add entry.'); }
+}
+
+document.getElementById('addId').addEventListener('click', addById);
+idInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addById(); });
+
+// Kick off
+init();
+</script>
+</body>
+</html>
