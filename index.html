@@ -1,108 +1,929 @@
+
 <!doctype html>
 <html lang="en">
 <head>
- <meta charset="utf-8" />
- <meta name="viewport" content="width=device-width, initial-scale=1" />
- <title>My Reference Library</title>
- <!-- Google Fonts: Playfair Display & Arima -->
- <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Arima:wght@400;600&display=swap" rel="stylesheet">
- <style>
- :root{ --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee; --border:#1f2937; --ok:#34d399; --warn:#fbbf24; --err:#f87171; }
- html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";}
- h1{font-family:'Playfair Display', serif;font-size:1.92rem;margin:.5rem 0 1rem 0}
- .wrap{max-width:1100px;margin:0 auto;padding:1rem}
- .controls{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
- .control-card{background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1rem}
- .control-card h2{font-size:1.05rem;margin:0 0 .5rem 0}
- label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.25rem}
- input[type="text"], select{width:100%;padding:.5rem .6rem;border-radius:.5rem;border:1px solid var(--border);background:#0b1020;color:var(--text)}
- button{appearance:none;background:linear-gradient(90deg,#0891b2,#22d3ee);color:#082f49;border:none;border-radius:.6rem;padding:.5rem .8rem;font-weight:600;cursor:pointer}
- .status{font-size:.9rem;color:var(--muted);margin-top:.5rem;white-space:pre-line}
- .group{margin:1rem 0;border:1px solid var(--border);border-radius:.75rem;overflow:hidden}
- .group-header{display:flex;justify-content:space-between;align-items:center;background:#0b1020;padding:.6rem .8rem;cursor:pointer}
- .group-header h3{margin:0;font-size:1rem}
- .group-count{font-size:.85rem;color:var(--muted)}
- .entries{padding:.5rem .8rem}
- /* Entries: non-title text reduced by 20% (0.96em), title in Arima at 1.2em */
- .entry{border-top:1px dashed var(--border);padding:.6rem 0;line-height:1.45;font-size:0.96em}
- .entry:first-child{border-top:none}
- .entry-title{font-family:'Arima', system-ui; font-weight:700; font-size:1.2em}
- .meta{color:var(--muted)}
- .hidden{display:none}
- .row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
- code{background:#0b1020;padding:.1rem .3rem;border-radius:.3rem;border:1px solid var(--border)}
- .link{color:var(--accent);text-decoration:none}
- .link:hover{text-decoration:underline}
- .mini-btn{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:.5rem;padding:.2rem .45rem;font-size:.85em;cursor:pointer}
- .abstract{margin-top:.4rem;color:#cbd5e1;white-space:pre-wrap}
- .pmid-wrap{display:inline-flex;align-items:center;gap:.35rem}
- .pmid-copy{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:.35rem;padding:.05rem .35rem;font-size:.95em;cursor:pointer}
- .pmid-copy[disabled]{opacity:.6;cursor:not-allowed}
- @media (max-width:800px){ .controls{grid-template-columns:1fr} }
- </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Reference Library</title>
+  <!-- Google Fonts: Playfair Display & Arima -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Arima:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{ --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee; --border:#1f2937; --ok:#34d399; --warn:#fbbf24; --err:#f87171; }
+    html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";}
+    h1{font-family:'Playfair Display', serif;font-size:1.92rem;margin:.5rem 0 1rem 0}
+    .wrap{max-width:1100px;margin:0 auto;padding:1rem}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+    .control-card{background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1rem}
+    .control-card h2{font-size:1.05rem;margin:0 0 .5rem 0}
+    label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.25rem}
+    input[type="text"], select{width:100%;padding:.5rem .6rem;border-radius:.5rem;border:1px solid var(--border);background:#0b1020;color:var(--text)}
+    button{appearance:none;background:linear-gradient(90deg,#0891b2,#22d3ee);color:#082f49;border:none;border-radius:.6rem;padding:.5rem .8rem;font-weight:600;cursor:pointer}
+    .status{font-size:.9rem;color:var(--muted);margin-top:.5rem;white-space:pre-line}
+
+    .group{margin:1rem 0;border:1px solid var(--border);border-radius:.75rem;overflow:hidden}
+    .group-header{display:flex;justify-content:space-between;align-items:center;background:#0b1020;padding:.6rem .8rem;cursor:pointer}
+    .group-header h3{margin:0;font-size:1rem}
+    .group-count{font-size:.85rem;color:var(--muted)}
+    .entries{padding:.5rem .8rem}
+
+    /* Entries: non-title text reduced by 20% (0.96em), title in Arima at 1.2em */
+    .entry{border-top:1px dashed var(--border);padding:.6rem 0;line-height:1.45;font-size:0.96em}
+    .entry:first-child{border-top:none}
+    .entry-title{font-family:'Arima', system-ui; font-weight:700; font-size:1.2em}
+
+    .meta{color:var(--muted)}
+    .hidden{display:none}
+    .row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+    code{background:#0b1020;padding:.1rem .3rem;border-radius:.3rem;border:1px solid var(--border)}
+    .link{color:var(--accent);text-decoration:none}
+    .link:hover{text-decoration:underline}
+    .mini-btn{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:.5rem;padding:.2rem .45rem;font-size:.85em;cursor:pointer}
+    .abstract{margin-top:.4rem;color:#cbd5e1;white-space:pre-wrap}
+
+    .pmid-wrap{display:inline-flex;align-items:center;gap:.35rem}
+    .pmid-copy{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:.35rem;padding:.05rem .35rem;font-size:.95em;cursor:pointer}
+    .pmid-copy[disabled]{opacity:.6;cursor:not-allowed}
+
+    @media (max-width:800px){ .controls{grid-template-columns:1fr} }
+  </style>
 </head>
 <body>
- <div class="wrap">
- <h1>My Reference Library</h1>
- <div class="controls">
- <div class="control-card">
- <h2>Find & Sort</h2>
- <label for="search">Search (title, author, journal, year, DOI/PMID)</label>
- <input id="search" type="text" placeholder="Type to filter entries..." />
- <div class="row" style="margin-top:.5rem">
- <label for="sort" style="margin:0">Sort</label>
- <select id="sort">
- <option value="year_desc">Year (newest first)</option>
- <option value="year_asc">Year (oldest first)</option>
- <option value="title_az">Title (A→Z)</option>
- <option value="title_za">Title (Z→A)</option>
- <option value="journal_az">Journal (A→Z)</option>
- <option value="author_az">Author (A→Z, first author)</option>
- </select>
- <button id="reset">Reset</button>
- </div>
- <div id="status" class="status">Loading metadata...</div>
- </div>
- <div class="control-card">
- <h2>Add Entries</h2>
- <label for="idInput">Add by DOI or PubMed ID (PMID)</label>
- <div class="row">
- <input id="idInput" type="text" placeholder="Paste DOI (e.g., 10.1038/...) or PMID (digits)" />
- <button id="addId">Add</button>
- </div>
- <div class="status">Tip: Paste a DOI (full URL or bare) or a PMID. The dashboard auto-detects and fetches metadata (CrossRef → PubMed fallback).</div>
- </div>
- </div>
- <div id="groups"></div>
- </div>
+  <div class="wrap">
+    <h1>My Reference Library</h1>
+    <div class="controls">
+      <div class="control-card">
+        <h2>Find & Sort</h2>
+        <label for="search">Search (title, author, journal, year, DOI/PMID)</label>
+        <input id="search" type="text" placeholder="Type to filter entries..." />
+        <div class="row" style="margin-top:.5rem">
+          <label for="sort" style="margin:0">Sort</label>
+          <select id="sort">
+            <option value="year_desc">Year (newest first)</option>
+            <option value="year_asc">Year (oldest first)</option>
+            <option value="title_az">Title (A→Z)</option>
+            <option value="title_za">Title (Z→A)</option>
+            <option value="journal_az">Journal (A→Z)</option>
+            <option value="author_az">Author (A→Z, first author)</option>
+          </select>
+          <button id="reset">Reset</button>
+        </div>
+        <div id="status" class="status">Loading metadata...</div>
+      </div>
+      <div class="control-card">
+        <h2>Add Entries</h2>
+        <label for="idInput">Add by DOI or PubMed ID (PMID)</label>
+        <div class="row">
+          <input id="idInput" type="text" placeholder="Paste DOI (e.g., 10.1038/...) or PMID (digits)" />
+          <button id="addId">Add</button>
+        </div>
+        <div class="status">Tip: Paste a DOI (full URL or bare) or a PMID. The dashboard auto-detects and fetches metadata (CrossRef → PubMed fallback).</div>
+      </div>
+    </div>
+
+    <div id="groups"></div>
+  </div>
+
 <script>
 const CONTACT_EMAIL = 'mailto:example@users.noreply';
 const CACHE_KEY = 'reflib_records_v1';
+
 const initialIdentifiers = [
- { type: 'doi', id: 'https://doi.org/10.1093/nar/gkae241' },
- { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2024.0272' },
- { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2024.0272' },
- { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1290059' },
- { type: 'doi', id: 'https://doi.org/10.1016/j.molcel.2023.05.018' },
- { type: 'doi', id: 'https://doi.org/10.1084/jem.2022065010252022c' },
- { type: 'doi', id: 'https://doi.org/10.1084/jem.20220650' },
- { type: 'doi', id: 'https://doi.org/10.21769/BioProtoc.4464' },
- { type: 'doi', id: 'https://doi.org/10.1126/science.abj8222' },
- { type: 'doi', id: 'https://doi.org/10.1126/science.abd4250' },
- { type: 'doi', id: 'https://doi.org/10.1038/s41596-018-0025-6' },
- { type: 'doi', id: 'https://doi.org/10.1371/journal.ppat.1007114' },
- { type: 'doi', id: 'https://doi.org/10.1128/JVI.79.24.15323-15330.2005' },
- { type: 'doi', id: 'https://doi.org/10pe: 'doi', id: 'https://doi.org/10.1128/JVI.35.3.603-618.1980' },
- { type: 'doi', id: 'https://doi.org/10.1038/310207a0' }
+  { type: 'doi', id: 'https://doi.org/10.1002/jmv.70785' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2025.106860' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.clim.2025.110644' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2025.106884' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41467-025-67969-x' },
+  { type: 'doi', id: 'https://doi.org/10.1093/infdis/jiag010' },
+  { type: 'doi', id: 'https://doi.org/10.1097/md.0000000000047013' },
+  { type: 'doi', id: 'https://doi.org/10.1177/09612033261415985' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s13353-025-01041-8' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2025.106952' },
+  { type: 'doi', id: 'https://doi.org/10.1111/sji.70088' },
+  { type: 'doi', id: 'https://doi.org/10.1039/d5cp02745d' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2025.12.032' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2025.12.046' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2025.12.031' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2026.106988' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2026.107014' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jad.2026.121253' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2025.1680233' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fmicb.2025.1706133' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jtct.2025.12.1001' },
+  { type: 'doi', id: 'https://doi.org/10.1212/nxi.0000000000200332' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s40263-024-01153-5' },
+  { type: 'doi', id: 'https://doi.org/10.2174/0118715303325979241206115417' },
+  { type: 'doi', id: 'https://doi.org/10.1128/mmbr.00119-23' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.2400167122' },
+  { type: 'doi', id: 'https://doi.org/10.1212/nxi.0000000000200370' },
+  { type: 'doi', id: 'https://doi.org/10.1177/2050313x251316764' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2025.1531447' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jare.2025.02.021' },
+  { type: 'doi', id: 'https://doi.org/10.1126/sciimmunol.adl3604' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2025.106337' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms26041767' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s10654-025-01212-1' },
+  { type: 'doi', id: 'https://doi.org/10.1126/sciadv.adu5110' },
+  { type: 'doi', id: 'https://doi.org/10.1136/jnnp-2024-335512' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.2424986122' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.2425670122' },
+  { type: 'doi', id: 'https://doi.org/10.1136/jnnp-2024-335689' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.isci.2025.112081' },
+  { type: 'doi', id: 'https://doi.org/10.1111/sji.70016' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.imlet.2025.107004' },
+  { type: 'doi', id: 'https://doi.org/10.1111/imj.70023' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41598-025-95276-4' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.2418783122' },
+  { type: 'doi', id: 'https://doi.org/10.1111/ene.70131' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2025.1557483' },
+  { type: 'doi', id: 'https://doi.org/10.5281/zenodo.14617124' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41579-025-01181-y' },
+  { type: 'doi', id: 'https://doi.org/10.3390/microorganisms13040733' },
+  { type: 'doi', id: 'https://doi.org/10.1097/wco.0000000000001361' },
+  { type: 'doi', id: 'https://doi.org/10.1093/brain/awaf170' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41582-025-01099-2' },
+  { type: 'doi', id: 'https://doi.org/10.1172/jci.insight.188543' },
+  { type: 'doi', id: 'https://doi.org/10.4103/nrr.nrr-d-24-01464' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.celrep.2025.115709' },
+  { type: 'doi', id: 'https://doi.org/10.3238/arztebl.m2025.0069' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jns.2025.123537' },
+  { type: 'doi', id: 'https://doi.org/10.1177/13524585251340812' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41582-025-01096-5' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms26104885' },
+  { type: 'doi', id: 'https://doi.org/10.21769/bioprotoc.5312' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2025.106551' },
+  { type: 'doi', id: 'https://doi.org/10.1007/82_2025_308' },
+  { type: 'doi', id: 'https://doi.org/10.1111/bjh.20199' },
+  { type: 'doi', id: 'https://doi.org/10.1212/nxi.0000000000200400' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2025.106569' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.2426339122' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s43856-025-00956-x' },
+  { type: 'doi', id: 'https://doi.org/10.3390/vaccines13060572' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s12276-025-01482-5' },
+  { type: 'doi', id: 'https://doi.org/10.1111/imm.70014' },
+  { type: 'doi', id: 'https://doi.org/10.1007/82_2025_304' },
+  { type: 'doi', id: 'https://doi.org/10.17879/freeneuropathology-2025-6762' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.bbih.2025.101045' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41467-025-61751-9' },
+  { type: 'doi', id: 'https://doi.org/10.1101/2025.05.19.654955' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s12035-025-05211-x' },
+  { type: 'doi', id: 'https://doi.org/10.1002/jmv.70501' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.brainres.2025.149844' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.imj.2025.100194' },
+  { type: 'doi', id: 'https://doi.org/10.3390/brainsci15070766' },
+  { type: 'doi', id: 'https://doi.org/10.3390/medicina61071148' },
+  { type: 'doi', id: 'https://doi.org/10.3390/v17070936' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.isci.2025.113048' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41598-025-13030-2' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fneur.2025.1629581' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41586-025-09378-0' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2025.106665' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s10072-025-08385-3' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jcv.2025.105854' },
+  { type: 'doi', id: 'https://doi.org/10.1001/jamanetworkopen.2025.27487' },
+  { type: 'doi', id: 'https://doi.org/10.1093/g3journal/jkaf192' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2025.106695' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s10528-025-11238-5' },
+  { type: 'doi', id: 'https://doi.org/10.1097/md.0000000000044145' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2025.106718' },
+  { type: 'doi', id: 'https://doi.org/10.1021/acs.analchem.5c03964' },
+  { type: 'doi', id: 'https://doi.org/10.1212/nxi.0000000000200460' },
+  { type: 'doi', id: 'https://doi.org/10.1021/acsmedchemlett.5c00397' },
+  { type: 'doi', id: 'https://doi.org/10.1101/2025.09.08.674901' },
+  { type: 'doi', id: 'https://doi.org/10.1093/cei/uxaf061' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2025.578758' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41598-025-17254-0' },
+  { type: 'doi', id: 'https://doi.org/10.1080/08820139.2025.2559799' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s11011-025-01678-8' },
+  { type: 'doi', id: 'https://doi.org/10.1186/s12974-025-03547-8' },
+  { type: 'doi', id: 'https://doi.org/10.2147/jir.s543598' },
+  { type: 'doi', id: 'https://doi.org/10.1002/ana.78043' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.clim.2025.110608' },
+  { type: 'doi', id: 'https://doi.org/10.1186/s12974-025-03567-4' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00415-025-13477-3' },
+  { type: 'doi', id: 'https://doi.org/10.3390/brainsci15101097' },
+  { type: 'doi', id: 'https://doi.org/10.1155/crnm/6694528' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2025.106830' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s10787-025-02012-5' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.mam.2025.101422' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s12035-025-05348-9' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms262110727' },
+  { type: 'doi', id: 'https://doi.org/10.1111/ene.70430' },
+  { type: 'doi', id: 'https://doi.org/10.12669/pjms.41.10.12579' },
+  { type: 'doi', id: 'https://doi.org/10.1101/2025.10.29.685446' },
+  { type: 'doi', id: 'https://doi.org/10.18502/cjn.v23i4.18769' },
+  { type: 'doi', id: 'https://doi.org/10.3390/hematolrep17060055' },
+  { type: 'doi', id: 'https://doi.org/10.1128/jvi.00869-25' },
+  { type: 'doi', id: 'https://doi.org/10.1172/jci195764' },
+  { type: 'doi', id: 'https://doi.org/10.1007/82_2025_335' },
+  { type: 'doi', id: 'https://doi.org/10.1101/2025.11.20.689441' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s12223-025-01388-9' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00702-025-03073-0' },
+  { type: 'doi', id: 'https://doi.org/10.64898/2025.12.11.25342083' },
+  { type: 'doi', id: 'https://doi.org/10.1136/bmjno-2025-001313' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms27010437' },
+  { type: 'doi', id: 'https://doi.org/10.1093/braincomms/fcaf492' },
+  { type: 'doi', id: 'https://doi.org/10.1097/meg.0000000000003109' },
+  { type: 'doi', id: 'https://doi.org/10.1093/nar/gkae241' },
+  { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2024.0272' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1290059' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.semarthrit.2023.152320' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.autrev.2023.103480' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s13365-023-01190-8' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.2315857121' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2024.105436' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2024.105444' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1330181' },
+  { type: 'doi', id: 'https://doi.org/10.2169/internalmedicine.2874-23' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2024.105477' },
+  { type: 'doi', id: 'https://doi.org/10.1177/11206721241230567' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41582-024-00939-x' },
+  { type: 'doi', id: 'https://doi.org/10.1126/sciimmunol.adj4748' },
+  { type: 'doi', id: 'https://doi.org/10.1177/13524585231224685' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms25031520' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2024.105493' },
+  { type: 'doi', id: 'https://doi.org/10.1002/hsr2.1898' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2023.105410' },
+  { type: 'doi', id: 'https://doi.org/10.1002/ana.26890' },
+  { type: 'doi', id: 'https://doi.org/10.1002/iid3.1178' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2024.578314' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41392-024-01774-8' },
+  { type: 'doi', id: 'https://doi.org/10.1021/acschemneuro.4c00012' },
+  { type: 'doi', id: 'https://doi.org/10.1134/s1607672924700753' },
+  { type: 'doi', id: 'https://doi.org/10.1186/s12864-024-10183-8' },
+  { type: 'doi', id: 'https://doi.org/10.1080/1744666x.2024.2328739' },
+  { type: 'doi', id: 'https://doi.org/10.1097/wco.0000000000001266' },
+  { type: 'doi', id: 'https://doi.org/10.1177/13524585241237707' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.bbih.2024.100752' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.medj.2024.02.013' },
+  { type: 'doi', id: 'https://doi.org/10.1212/nxi.0000000000200217' },
+  { type: 'doi', id: 'https://doi.org/10.15644/asc58/1/7' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1366377' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fncel.2024.1343562' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2024.105597' },
+  { type: 'doi', id: 'https://doi.org/10.1212/nxi.0000000000200226' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2024.578343' },
+  { type: 'doi', id: 'https://doi.org/10.1093/brain/awae110' },
+  { type: 'doi', id: 'https://doi.org/10.1080/1040841x.2024.2344114' },
+  { type: 'doi', id: 'https://doi.org/10.1212/nxi.0000000000200250' },
+  { type: 'doi', id: 'https://doi.org/10.4143/crt.2023.1356' },
+  { type: 'doi', id: 'https://doi.org/10.1371/journal.ppat.1011939' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cyto.2024.156624' },
+  { type: 'doi', id: 'https://doi.org/10.1177/11795735241249693' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fnins.2024.1385233' },
+  { type: 'doi', id: 'https://doi.org/10.1101/2024.05.09.593401' },
+  { type: 'doi', id: 'https://doi.org/10.1016/bs.afnr.2023.12.007' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.xcrm.2024.101587' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41564-024-01699-6' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s10048-024-00764-w' },
+  { type: 'doi', id: 'https://doi.org/10.1371/journal.ppat.1012177' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2024.578382' },
+  { type: 'doi', id: 'https://doi.org/10.1002/ana.27009' },
+  { type: 'doi', id: 'https://doi.org/10.7554/elife.88826' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1384411' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s43856-024-00546-3' },
+  { type: 'doi', id: 'https://doi.org/10.3390/pathogens13060499' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2024.105742' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jaut.2024.103279' },
+  { type: 'doi', id: 'https://doi.org/10.1093/brain/awae244' },
+  { type: 'doi', id: 'https://doi.org/10.1111/ene.16387' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jad.2024.07.135' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2024.578408' },
+  { type: 'doi', id: 'https://doi.org/10.1016/b978-0-323-90242-7.00010-9' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms25158064' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms25158160' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jns.2024.123161' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fncel.2024.1426231' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.gastha.2024.03.013' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.autrev.2024.103610' },
+  { type: 'doi', id: 'https://doi.org/10.1177/13524585241274571' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1334720' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1466339' },
+  { type: 'doi', id: 'https://doi.org/10.3892/etm.2024.12702' },
+  { type: 'doi', id: 'https://doi.org/10.1101/2024.09.07.611010' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1445209' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41582-024-01025-y' },
+  { type: 'doi', id: 'https://doi.org/10.7759/cureus.68946' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41584-024-01167-9' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2024.105916' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s13365-024-01231-w' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.2416097121' },
+  { type: 'doi', id: 'https://doi.org/10.1371/journal.ppat.1012341' },
+  { type: 'doi', id: 'https://doi.org/10.3390/pathogens13100876' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41467-024-53658-8' },
+  { type: 'doi', id: 'https://doi.org/10.1172/jci184481' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s11427-023-2599-1' },
+  { type: 'doi', id: 'https://doi.org/10.25259/sni_457_2024' },
+  { type: 'doi', id: 'https://doi.org/10.1134/s160767292460060x' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1505829' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2024.106173' },
+  { type: 'doi', id: 'https://doi.org/10.3390/nu16223887' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1442694' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.bbih.2024.100896' },
+  { type: 'doi', id: 'https://doi.org/10.1136/jnnp-2024-335053' },
+  { type: 'doi', id: 'https://doi.org/10.1177/13524585241292957' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00415-024-12763-w' },
+  { type: 'doi', id: 'https://doi.org/10.1177/13524585241298065' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1401156' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1487523' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1503808' },
+  { type: 'doi', id: 'https://doi.org/10.1101/2024.12.18.629009' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2024.1509927' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.molcel.2023.05.018' },
+  { type: 'doi', id: 'https://doi.org/10.2174/1871527321666220119104649' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.joen.2022.12.005' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.micinf.2022.105084' },
+  { type: 'doi', id: 'https://doi.org/10.1126/sciadv.abq6978' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2023.104497' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.stemcr.2022.12.005' },
+  { type: 'doi', id: 'https://doi.org/10.1084/jem.20221322' },
+  { type: 'doi', id: 'https://doi.org/10.1111/imm.13625' },
+  { type: 'doi', id: 'https://doi.org/10.53738/revmed.2023.19.809-10.42' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.neuron.2022.12.029' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms24021500' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2023.104530' },
+  { type: 'doi', id: 'https://doi.org/10.1097/meg.0000000000002505' },
+  { type: 'doi', id: 'https://doi.org/10.1212/nxi.0000000000200084' },
+  { type: 'doi', id: 'https://doi.org/10.31083/j.jin2201007' },
+  { type: 'doi', id: 'https://doi.org/10.1186/s12879-023-08031-3' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2023.578036' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41582-023-00775-5' },
+  { type: 'doi', id: 'https://doi.org/10.1016/s1474-4422(22)00471-9' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.imlet.2023.02.003' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.micpath.2023.106031' },
+  { type: 'doi', id: 'https://doi.org/10.21203/rs.3.rs-2398872/v1' },
+  { type: 'doi', id: 'https://doi.org/10.1128/mbio.03459-22' },
+  { type: 'doi', id: 'https://doi.org/10.1212/nxi.0000000000200093' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1141014' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.pharmthera.2023.108358' },
+  { type: 'doi', id: 'https://doi.org/10.1002/cti2.1438' },
+  { type: 'doi', id: 'https://doi.org/10.1002/cti2.1437' },
+  { type: 'doi', id: 'https://doi.org/10.3390/cells12050684' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s13365-023-01124-4' },
+  { type: 'doi', id: 'https://doi.org/10.1002/cti2.1444' },
+  { type: 'doi', id: 'https://doi.org/10.3390/v15030656' },
+  { type: 'doi', id: 'https://doi.org/10.3390/cancers15072133' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms24087407' },
+  { type: 'doi', id: 'https://doi.org/10.3390/v15040949' },
+  { type: 'doi', id: 'https://doi.org/10.1002/ueg2.12398' },
+  { type: 'doi', id: 'https://doi.org/10.1177/08830738231170290' },
+  { type: 'doi', id: 'https://doi.org/10.1126/sciadv.adg3032' },
+  { type: 'doi', id: 'https://doi.org/10.1002/cti2.1451' },
+  { type: 'doi', id: 'https://doi.org/10.1002/jmv.28793' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00403-023-02648-9' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2023.104747' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2023.104769' },
+  { type: 'doi', id: 'https://doi.org/10.1021/acschemneuro.3c00231' },
+  { type: 'doi', id: 'https://doi.org/10.1111/ene.15919' },
+  { type: 'doi', id: 'https://doi.org/10.3390/microorganisms11051262' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1161849' },
+  { type: 'doi', id: 'https://doi.org/10.1002/cti2.1454' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.ijregi.2023.04.002' },
+  { type: 'doi', id: 'https://doi.org/10.3390/life13061309' },
+  { type: 'doi', id: 'https://doi.org/10.1002/cti2.1457' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s11882-023-01102-0' },
+  { type: 'doi', id: 'https://doi.org/10.1093/cei/uxad075' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.imlet.2023.07.006' },
+  { type: 'doi', id: 'https://doi.org/10.2147/idr.s375624' },
+  { type: 'doi', id: 'https://doi.org/10.1080/19932820.2023.2238354' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.clim.2023.109709' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.heliyon.2023.e18250' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41467-023-39770-1' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1212676' },
+  { type: 'doi', id: 'https://doi.org/10.17116/jnevro202312307296' },
+  { type: 'doi', id: 'https://doi.org/10.1212/nxi.0000000000200149' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.clim.2023.109733' },
+  { type: 'doi', id: 'https://doi.org/10.1021/acschemneuro.3c00368' },
+  { type: 'doi', id: 'https://doi.org/10.1177/17562864231197309' },
+  { type: 'doi', id: 'https://doi.org/10.1089/vim.2023.0109' },
+  { type: 'doi', id: 'https://doi.org/10.1101/2023.09.14.23295428' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2023.578202' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms241814192' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fncel.2023.1257000' },
+  { type: 'doi', id: 'https://doi.org/10.1136/jnnp-2023-331868' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2023.105037' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1248182' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1192032' },
+  { type: 'doi', id: 'https://doi.org/10.1136/jnnp-2023-332161' },
+  { type: 'doi', id: 'https://doi.org/10.1093/brain/awad374' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00415-023-12081-7' },
+  { type: 'doi', id: 'https://doi.org/10.4149/bll_2023_143' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.xcrm.2023.101296' },
+  { type: 'doi', id: 'https://doi.org/10.3390/biomedicines11113069' },
+  { type: 'doi', id: 'https://doi.org/10.1002/rmv.2494' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1304281' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2023.105141' },
+  { type: 'doi', id: 'https://doi.org/10.1155/2023/8175628' },
+  { type: 'doi', id: 'https://doi.org/10.53854/liim-3104-6' },
+  { type: 'doi', id: 'https://doi.org/10.17219/acem/172240' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2023.11.015' },
+  { type: 'doi', id: 'https://doi.org/10.1177/13524585231215268' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2023.11.023' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms242417151' },
+  { type: 'doi', id: 'https://doi.org/10.61186/ibj.3991' },
+  { type: 'doi', id: 'https://doi.org/10.2222/jsv.73.147' },
+  { type: 'doi', id: 'https://doi.org/10.3390/neurosci4030019' },
+  { type: 'doi', id: 'https://doi.org/10.1186/s12864-023-09489-w' },
+  { type: 'doi', id: 'https://doi.org/10.1084/jem.2022065010252022c' },
+  { type: 'doi', id: 'https://doi.org/10.1084/jem.20220650' },
+  { type: 'doi', id: 'https://doi.org/10.21769/BioProtoc.4464' },
+  { type: 'doi', id: 'https://doi.org/10.1126/science.abj8222' },
+  { type: 'doi', id: 'https://doi.org/10.1212/wnl.0000000000013045' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.coviro.2021.11.013' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms23010578' },
+  { type: 'doi', id: 'https://doi.org/10.1126/science.abm7930' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41586-022-04432-7' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fmolb.2021.816098' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00018-021-04056-6' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2022.103563' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2022.103561' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41583-022-00566-9' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41593-022-01017-5' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41577-022-00686-4' },
+  { type: 'doi', id: 'https://doi.org/10.1212/wnl.0000000000200243' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2022.103678' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2021.805260' },
+  { type: 'doi', id: 'https://doi.org/10.1159/000522577' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2021.103318' },
+  { type: 'doi', id: 'https://doi.org/10.3390/cancers14030611' },
+  { type: 'doi', id: 'https://doi.org/10.1038/d41586-022-00382-2' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fneur.2022.835162' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.isci.2022.103843' },
+  { type: 'doi', id: 'https://doi.org/10.3390/biomedicines10020387' },
+  { type: 'doi', id: 'https://doi.org/10.3390/v14020281' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.immuni.2022.01.018' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.840753' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.812317' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.immuni.2022.02.008' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fneur.2022.817677' },
+  { type: 'doi', id: 'https://doi.org/10.1016/s1474-4422(22)00086-2' },
+  { type: 'doi', id: 'https://doi.org/10.7759/cureus.22191' },
+  { type: 'doi', id: 'https://doi.org/10.3390/antib11010020' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms23063079' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fonc.2022.812224' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.821457' },
+  { type: 'doi', id: 'https://doi.org/10.1126/sciimmunol.abo7799' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00415-022-11072-4' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41467-022-29307-3' },
+  { type: 'doi', id: 'https://doi.org/10.1101/gr.276383.121' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.celrep.2022.110636' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41419-022-04812-x' },
+  { type: 'doi', id: 'https://doi.org/10.1186/s13072-022-00444-9' },
+  { type: 'doi', id: 'https://doi.org/10.1177/10738584221090209' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2022.03.033' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.autrev.2022.103102' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41437-022-00533-1' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2022.577868' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.crmeth.2022.100193' },
+  { type: 'doi', id: 'https://doi.org/10.1172/jci160468' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jmgm.2022.108196' },
+  { type: 'doi', id: 'https://doi.org/10.1126/scitranslmed.abf3685' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41598-022-11444-w' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41418-022-01010-2' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41591-022-01823-1' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.medj.2022.02.005' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00018-022-04323-0' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s43856-022-00076-w' },
+  { type: 'doi', id: 'https://doi.org/10.1051/medsci/2022051' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00415-022-11177-w' },
+  { type: 'doi', id: 'https://doi.org/10.1093/humupd/dmac027' },
+  { type: 'doi', id: 'https://doi.org/10.1093/bib/bbac222' },
+  { type: 'doi', id: 'https://doi.org/10.1097/wco.0000000000001063' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.xcrm.2022.100658' },
+  { type: 'doi', id: 'https://doi.org/10.1146/annurev-virology-093020-013659' },
+  { type: 'doi', id: 'https://doi.org/10.5603/pjnns.a2022.0043' },
+  { type: 'doi', id: 'https://doi.org/10.1093/brain/awac233' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2022.104007' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fneur.2022.887794' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41392-022-01100-0' },
+  { type: 'doi', id: 'https://doi.org/10.5339/qmj.2022.29' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.858583' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2022.104069' },
+  { type: 'doi', id: 'https://doi.org/10.7759/cureus.26186' },
+  { type: 'doi', id: 'https://doi.org/10.1155/2022/4864950' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2022.577935' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41579-022-00770-5' },
+  { type: 'doi', id: 'https://doi.org/10.21769/bioprotoc.4464' },
+  { type: 'doi', id: 'https://doi.org/10.1212/con.0000000000001136' },
+  { type: 'doi', id: 'https://doi.org/10.3390/cancers14153778' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms23158330' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2022.104094' },
+  { type: 'doi', id: 'https://doi.org/10.1136/bmjno-2022-000271' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.937583' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.970486' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.972160' },
+  { type: 'doi', id: 'https://doi.org/10.1172/jci164141' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2022.07.025' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.biopha.2022.113490' },
+  { type: 'doi', id: 'https://doi.org/10.3390/cells11172757' },
+  { type: 'doi', id: 'https://doi.org/10.1155/2022/3762892' },
+  { type: 'doi', id: 'https://doi.org/10.1002/ana.26502' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2022.104149' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.xcrm.2022.100744' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2022.104155' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.1001068' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms231810946' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s10620-022-07705-3' },
+  { type: 'doi', id: 'https://doi.org/10.1111/ene.15582' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.991662' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s13365-022-01083-2' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.1001145' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.1028972' },
+  { type: 'doi', id: 'https://doi.org/10.1093/nargab/lqac082' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijerph192013054' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.immuni.2022.10.003' },
+  { type: 'doi', id: 'https://doi.org/10.1093/brain/awac401' },
+  { type: 'doi', id: 'https://doi.org/10.1002/cti2.1418' },
+  { type: 'doi', id: 'https://doi.org/10.1136/jnnp-2022-330205' },
+  { type: 'doi', id: 'https://doi.org/10.1590/0074-02760220200' },
+  { type: 'doi', id: 'https://doi.org/10.1136/rmdopen-2022-002621' },
+  { type: 'doi', id: 'https://doi.org/10.1126/sciadv.ade6844' },
+  { type: 'doi', id: 'https://doi.org/10.3390/cells11223619' },
+  { type: 'doi', id: 'https://doi.org/10.1590/1806-9282.20221201' },
+  { type: 'doi', id: 'https://doi.org/10.1002/jmv.28363' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.1010605' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00284-022-03112-z' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2022.1036155' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fneur.2022.1013413' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2022.104377' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41598-022-26409-2' },
+  { type: 'doi', id: 'https://doi.org/10.1002/imt2.43' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41591-020-01145-0' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fmolb.2021.657150' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms22063201' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2021.640918' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2021.03.025' },
+  { type: 'doi', id: 'https://doi.org/10.15252/embr.202051803' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41586-021-03631-y' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms22115578' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms22147372' },
+  { type: 'doi', id: 'https://doi.org/10.1111/imr.13024' },
+  { type: 'doi', id: 'https://doi.org/10.1158/0008-5472.can-21-2619' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2021.103282' },
+  { type: 'doi', id: 'https://doi.org/10.1182/bloodadvances.2021005682' },
+  { type: 'doi', id: 'https://doi.org/10.1001/jamanetworkopen.2021.24932' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.msard.2021.103288' },
+  { type: 'doi', id: 'https://doi.org/10.1111/his.14585' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2021.755333' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2021.728677' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2021.734471' },
+  { type: 'doi', id: 'https://doi.org/10.7759/cureus.18487' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2021.757302' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fgene.2021.774846' },
+  { type: 'doi', id: 'https://doi.org/10.1101/gr.264705.120' },
+  { type: 'doi', id: 'https://doi.org/10.3390/microorganisms9112191' },
+  { type: 'doi', id: 'https://doi.org/10.1158/1078-0432.ccr-21-3151' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2021.656797' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2021.764937' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2021.798003' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.bbih.2021.100395' },
+  { type: 'doi', id: 'https://doi.org/10.22074/cellj.2021.7308' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms23010253' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms23010298' },
+  { type: 'doi', id: 'https://doi.org/10.17116/jnevro202112111286' },
+  { type: 'doi', id: 'https://doi.org/10.1126/science.abd4250' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.anndiagpath.2019.151421' },
+  { type: 'doi', id: 'https://doi.org/10.1158/2159-8290.cd-19-0116' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.bbamcr.2020.118673' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fgene.2020.00072' },
+  { type: 'doi', id: 'https://doi.org/10.1182/blood.2019004126' },
+  { type: 'doi', id: 'https://doi.org/10.1021/acs.jmedchem.9b02076' },
+  { type: 'doi', id: 'https://doi.org/10.1158/2159-8290.cd-19-1416' },
+  { type: 'doi', id: 'https://doi.org/10.1186/s13059-020-01996-3' },
+  { type: 'doi', id: 'https://doi.org/10.3390/ijms21124402' },
+  { type: 'doi', id: 'https://doi.org/10.3390/biom10091205' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fmicb.2020.01910' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.immuni.2020.11.013' },
+  { type: 'doi', id: 'https://doi.org/10.37349/etat.2020.00018' },
+  { type: 'doi', id: 'https://doi.org/10.1186/s12864-019-5532-5' },
+  { type: 'doi', id: 'https://doi.org/10.1111/imr.12755' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2019.03.016' },
+  { type: 'doi', id: 'https://doi.org/10.1186/s12920-019-0525-4' },
+  { type: 'doi', id: 'https://doi.org/10.1101/gad.326066.119' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cmet.2019.06.003' },
+  { type: 'doi', id: 'https://doi.org/10.1111/imcb.12283' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.celrep.2019.06.079' },
+  { type: 'doi', id: 'https://doi.org/10.4049/jimmunol.1801420' },
+  { type: 'doi', id: 'https://doi.org/10.1371/journal.ppat.1008030' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41419-019-1886-5' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fcell.2019.00272' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s40588-019-00127-2' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41596-018-0025-6' },
+  { type: 'doi', id: 'https://doi.org/10.1371/journal.ppat.1007114' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.stem.2017.12.002' },
+  { type: 'doi', id: 'https://doi.org/10.1002/cpmb.51' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2018.01.029' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.ceb.2018.03.011' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.molcel.2018.04.028' },
+  { type: 'doi', id: 'https://doi.org/10.1093/bioinformatics/bty633' },
+  { type: 'doi', id: 'https://doi.org/10.3390/cancers10070237' },
+  { type: 'doi', id: 'https://doi.org/10.1080/15476286.2018.1518854' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.coviro.2018.08.012' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.ebiom.2018.10.065' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2018.10.042' },
+  { type: 'doi', id: 'https://doi.org/10.1101/153353' },
+  { type: 'doi', id: 'https://doi.org/10.1074/jbc.M117.796441' },
+  { type: 'doi', id: 'https://doi.org/10.1158/1078-0432.ccr-16-2071' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.exphem.2016.12.006' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.nic.2016.12.001' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.chom.2017.04.005' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fpls.2017.00999' },
+  { type: 'doi', id: 'https://doi.org/10.1371/journal.ppat.1006500' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2017.07.013' },
+  { type: 'doi', id: 'https://doi.org/10.1038/icb.2017.71' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.coviro.2017.08.004' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.celrep.2017.08.081' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.jneuroim.2017.03.013' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.celrep.2016.01.038' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.canlet.2016.02.047' },
+  { type: 'doi', id: 'https://doi.org/10.1093/bioinformatics/btw313' },
+  { type: 'doi', id: 'https://doi.org/10.1186/s13059-016-0984-2' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s12026-016-8814-x' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.ccell.2016.07.006' },
+  { type: 'doi', id: 'https://doi.org/10.1158/0008-5472.can-16-0608' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.immuni.2016.08.012' },
+  { type: 'doi', id: 'https://doi.org/10.1007/978-1-4939-6655-4_8' },
+  { type: 'doi', id: 'https://doi.org/10.1101/gr.210955.116' },
+  { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2014.3537' },
+  { type: 'doi', id: 'https://doi.org/10.1038/emm.2014.84' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2015.01.015' },
+  { type: 'doi', id: 'https://doi.org/10.1126/science.aaa0698' },
+  { type: 'doi', id: 'https://doi.org/10.1093/bioinformatics/btv494' },
+  { type: 'doi', id: 'https://doi.org/10.1007/978-3-319-22822-8_8' },
+  { type: 'doi', id: 'https://doi.org/10.1101/cshperspect.a014282' },
+  { type: 'doi', id: 'https://doi.org/10.1111/imr.12206' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.celrep.2014.07.037' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.celrep.2013.06.016' },
+  { type: 'doi', id: 'https://doi.org/10.1371/journal.pcbi.1003118' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.chom.2012.06.008' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fonc.2012.00201' },
+  { type: 'doi', id: 'https://doi.org/10.1056/NEJMoa1108524' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2011.02.013' },
+  { type: 'doi', id: 'https://doi.org/10.1182/blood-2009-06-227017' },
+  { type: 'doi', id: 'https://doi.org/10.1042/bj20091578' },
+  { type: 'doi', id: 'https://doi.org/10.1007/s00439-010-0848-x' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.1017419108' },
+  { type: 'doi', id: 'https://doi.org/10.1021/bi802068s' },
+  { type: 'doi', id: 'https://doi.org/10.1042/bj20081659' },
+  { type: 'doi', id: 'https://doi.org/10.1182/blood-2008-12-193037' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.bcmd.2008.02.003' },
+  { type: 'doi', id: 'https://doi.org/10.1182/blood-2008-01-131813' },
+  { type: 'doi', id: 'https://doi.org/10.1182/blood-2007-01-069575' },
+  { type: 'doi', id: 'https://doi.org/10.1182/blood-2005-06-2569' },
+  { type: 'doi', id: 'https://doi.org/10.1093/intimm/dxl041' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.autrev.2006.02.012' },
+  { type: 'doi', id: 'https://doi.org/10.1128/JVI.79.24.15323-15330.2005' },
+  { type: 'doi', id: 'https://doi.org/10.1002/hon.751' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.0407320101' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.cell.2004.09.014' },
+  { type: 'doi', id: 'https://doi.org/10.1182/blood-2003-04-1018' },
+  { type: 'doi', id: 'https://doi.org/10.1093/infdis/165.1.175' },
+  { type: 'doi', id: 'https://doi.org/10.1038/310207a0' },
+  { type: 'doi', id: 'https://doi.org/10.1128/JVI.35.3.603-618.1980' },
+  { type: 'doi', id: 'https://doi.org/10.1093/nar/gkae241' },
+  { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2024.0272' },
+  { type: 'doi', id: 'https://doi.org/10.1001/jamaneurol.2024.0272' },
+  { type: 'doi', id: 'https://doi.org/10.3389/fimmu.2023.1290059' },
+  { type: 'doi', id: 'https://doi.org/10.1016/j.molcel.2023.05.018' },
+  { type: 'doi', id: 'https://doi.org/10.1084/jem.2022065010252022c' },
+  { type: 'doi', id: 'https://doi.org/10.1084/jem.20220650' },
+  { type: 'doi', id: 'https://doi.org/10.21769/BioProtoc.4464' },
+  { type: 'doi', id: 'https://doi.org/10.1126/science.abj8222' },
+  { type: 'doi', id: 'https://doi.org/10.1126/science.abd4250' },
+  { type: 'doi', id: 'https://doi.org/10.1038/s41596-018-0025-6' },
+  { type: 'doi', id: 'https://doi.org/10.1371/journal.ppat.1007114' },
+  { type: 'doi', id: 'https://doi.org/10.1128/JVI.79.24.15323-15330.2005' },
+  { type: 'doi', id: 'https://doi.org/10.1073/pnas.0407320101' },
+  { type: 'doi', id: 'https://doi.org/10.1128/JVI.35.3.603-618.1980' },
+  { type: 'doi', id: 'https://doi.org/10.1038/310207a0' }
 ];
-function normalizeDOI(raw){ if(!raw) return null; let s=String(raw).trim(); s=s.replace(/^https?:\/\/doi\.org\//i,''); s=s.replace(/^doi:\s*/i,''); s=s.replace(/\s<>\[\\u200B]+$/g,''); return s; }
+
+function normalizeDOI(raw){ if(!raw) return null; let s=String(raw).trim(); s=s.replace(/^https?:\/\/doi\.org\//i,''); s=s.replace(/^doi:\s*/i,''); s=s.replace(/[\s<>\[\]()\u200B]+$/g,''); return s; }
 function normalizePMID(raw){ if(!raw) return null; const m=String(raw).trim().match(/\d+/); return m?m[0]:null; }
-function detectIdentifier(raw){ const s=String(raw).trim(); if(!s) return null; if(/^https?:\/\/doi\.org\//i.test(s)
-||/^doi:/i.test(s)
-||/^10\./.test(s)) return {type:'doi',id:s}; const pmid=normalizePMID(s); if(pmid) return {type:'pmid',id:pmid}; return null; }
-function uniqKey(rec){ return (rec.doi?`doi:${rec.doi.toLowerCase()}`:'')+(rec.pmid?` pmid:${rec.pmid}`:''); }
+function detectIdentifier(raw){ const s=String(raw).trim(); if(!s) return null; if(/^https?:\/\/doi\.org\//i.test(s)||/^doi:/i.test(s)||/^10\./.test(s)) return {type:'doi',id:s}; const pmid=normalizePMID(s); if(pmid) return {type:'pmid',id:pmid}; return null; }
+function uniqKey(rec){ return (rec.doi?`doi:${rec.doi.toLowerCase()}`:'')+(rec.pmid?`|pmid:${rec.pmid}`:''); }
 function yearFromCrossRef(obj){ const c=[obj?.issued,obj?.published,obj?.['published-print'],obj?.['published-online'],obj?.created]; for(const k of c){ if(!k) continue; const y=Array.isArray(k['date-parts'])&&k['date-parts'][0][0]; if(y) return y; } if(obj?.created?.['date-time']){ const y=new Date(obj.created['date-time']).getFullYear(); if(y) return y; } return null; }
 function yearFromPubMedSummary(s){ const f=[s?.epubdate,s?.pubdate,s?.sortpubdate]; for(const v of f){ if(!v) continue; const m=String(v).match(/(19|20)\d{2}/); if(m) return parseInt(m[0],10); } return null; }
 function stripHtml(s){ return String(s||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); }
-// ---- Title matching helpers ----
+
+// ---------- Title matching helpers ----------
 function normalizeTitle(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
+function titleWordSet(t){ return new Set(normalizeTitle(t).split(' ').filter(w=>w.length>2)); }
+function jaccard(a,b){ const ia = new Set(); for(const x of a){ if(b.has(x)) ia.add(x); } return ia.size / Math.max(1, (new Set([...a,...b])).size); }
+function scoreTitleMatch(t1,t2){ const s1=titleWordSet(t1), s2=titleWordSet(t2); return jaccard(s1,s2); }
+
+// ---------- PubMed helpers (refined selection) ----------
+async function pubmedSummaries(pmids){
+  const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmids.join(','))}&retmode=json`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`PubMed esummary ${res.status}`);
+  const json = await res.json();
+  const out = [];
+  for(const id of pmids){ if(json?.result?.[id]) out.push(json.result[id]); }
+  return out;
+}
+
+async function fetchPubMedByDOI(doi, recTitle){
+  const term = encodeURIComponent(doi);
+  const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${term}`;
+  try{
+    const sres = await fetch(searchUrl);
+    if(!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
+    const sjson = await sres.json();
+    const pmids = sjson?.esearchresult?.idlist || [];
+    if(pmids.length===0) throw new Error('No PMID found for DOI');
+    // Pull summaries for all candidates
+    const summaries = await pubmedSummaries(pmids);
+    const ndoi = normalizeDOI(doi);
+    // 1) Prefer exact DOI match in articleids
+    let best = null;
+    for(const s of summaries){
+      const ids = Array.isArray(s?.articleids) ? s.articleids : [];
+      const doiId = ids.find(x=>x?.idtype==='doi');
+      if(doiId && normalizeDOI(doiId.value)===ndoi){ best = s; break; }
+    }
+    // 2) If no exact DOI match, prefer highest title similarity
+    if(!best && recTitle){
+      let maxScore = -1; let maxSummary = null;
+      for(const s of summaries){ const score = scoreTitleMatch(recTitle, s?.title||''); if(score>maxScore){ maxScore=score; maxSummary=s; } }
+      // Require reasonable threshold, else fall back to first
+      best = (maxScore>=0.5) ? maxSummary : summaries[0];
+    }
+    best = best || summaries[0];
+    // Build our summary result object
+    const title = best?.title || null;
+    const journal = best?.fulljournalname || best?.source || null;
+    const year = yearFromPubMedSummary(best);
+    const authors = Array.isArray(best?.authors) ? best.authors.map(a=>({family:a?.name?.split(' ')[0]||'', given:a?.name?.split(' ').slice(1).join(' ')||''})) : [];
+    let outDoi = null;
+    if(Array.isArray(best?.articleids)){
+      const doiId = best.articleids.find(x=>x?.idtype==='doi'); if(doiId?.value) outDoi = doiId.value;
+    }
+    const pmid = String(best?.uid||pmids[0]);
+    return { title, journal, year, authors, doi: outDoi || doi, pmid, sources:['PubMed'], raw:{pubmed:best} };
+  }catch(err){
+    return { title:null, journal:null, year:null, authors:[], doi, pmid:null, sources:['PubMed(error)'] };
+  }
+}
+
+async function fetchPMIDByMetadata(title, year){
+  if(!title) return null;
+  const t = encodeURIComponent(title);
+  const y = year ? `+AND+${encodeURIComponent(year)}[dp]` : '';
+  const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${t}${y}`;
+  try{
+    const sres = await fetch(searchUrl);
+    if(!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
+    const sjson = await sres.json();
+    const pmids = sjson?.esearchresult?.idlist || [];
+    if(pmids.length===0) return null;
+    // Choose best by title similarity from esummary
+    const summaries = await pubmedSummaries(pmids);
+    let maxScore = -1; let best = null;
+    for(const s of summaries){ const score = scoreTitleMatch(title, s?.title||''); if(score>maxScore){ maxScore=score; best=s; } }
+    return best?.uid ? String(best.uid) : pmids[0];
+  }catch(err){ return null; }
+}
+
+function mergeRecords(a,b){
+  const out={...a};
+  ['title','journal','year'].forEach(f=>{ if(!out[f] && b && b[f]) out[f]=b[f]; });
+  if((!out.authors||out.authors.length===0)&&b?.authors?.length) out.authors=b.authors;
+  out.doi=out.doi||b?.doi||null;
+  out.pmid=out.pmid||b?.pmid||null;
+  out.sources=Array.from(new Set([...(a.sources||[]),...(b?.sources||[])]));
+  out._abstract=out._abstract||b?._abstract||null;
+  return out;
+}
+
+async function fetchFromCrossRef(doi){
+  const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}?mailto=${encodeURIComponent(CONTACT_EMAIL)}`;
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(`CrossRef ${res.status}`);
+    const json = await res.json(); const it = json?.message;
+    const title = Array.isArray(it?.title) ? it.title[0] : it?.title || null;
+    const journal = Array.isArray(it?.['container-title']) ? it['container-title'][0] : it?.['container-title'] || it?.shortContainerTitle || null;
+    const year = yearFromCrossRef(it);
+    const authors = Array.isArray(it?.author) ? it.author.map(a=>({family:a.family, given:a.given})) : [];
+    const abstract = it?.abstract ? stripHtml(it.abstract) : null;
+    return { title, journal, year, authors, doi, pmid:null, sources:['CrossRef'], raw:{crossref:it}, _abstract: abstract };
+  }catch(err){
+    return { title:null, journal:null, year:null, authors:[], doi, pmid:null, sources:['CrossRef(error)'], _abstract:null };
+  }
+}
+
+async function pubmedSummaryByPMID(pmid){
+  const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=json`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`PubMed esummary ${res.status}`);
+  const json = await res.json();
+  const s = json?.result?.[pmid];
+  if(!s) throw new Error('No esummary result');
+  const title = s?.title || null;
+  const journal = s?.fulljournalname || s?.source || null;
+  const year = yearFromPubMedSummary(s);
+  const authors = Array.isArray(s?.authors) ? s.authors.map(a=>({family:a?.name?.split(' ')[0]||'', given:a?.name?.split(' ').slice(1).join(' ')||''})) : [];
+  let doi = null;
+  if(Array.isArray(s?.articleids)){
+    const doiId = s.articleids.find(x=>x?.idtype==='doi');
+    if(doiId?.value) doi = doiId.value;
+  }
+  return { title, journal, year, authors, doi, pmid, sources:['PubMed'], raw:{pubmed:s} };
+}
+
+async function fetchPubMedAbstractByPMID(pmid){
+  const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=xml`;
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(`PubMed efetch ${res.status}`);
+    const text = await res.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, 'application/xml');
+    const nodes = Array.from(xml.getElementsByTagName('AbstractText'));
+    const content = nodes.map(n=>n.textContent.trim()).filter(Boolean).join('\n\n');
+    return content || null;
+  }catch(err){ return null; }
+}
+
+async function ensureAbstract(rec){
+  if(rec._abstract) return rec._abstract;
+  const crAbs = rec?.raw?.crossref?.abstract ? stripHtml(rec.raw.crossref.abstract) : null;
+  if(crAbs){ rec._abstract = crAbs; return rec._abstract; }
+  if(rec.pmid){ rec._abstract = await fetchPubMedAbstractByPMID(rec.pmid); return rec._abstract; }
+  if(rec.doi){ const pm = await fetchPubMedByDOI(rec.doi, rec.title); if(pm?.pmid){ rec.pmid = pm.pmid; rec._abstract = await fetchPubMedAbstractByPMID(pm.pmid); return rec._abstract; } }
+  return null;
+}
+
+async function resolveIdentifier({type,id}){
+  if(type==='doi'){
+    const doi = normalizeDOI(id);
+    let a = await fetchFromCrossRef(doi);
+    if(!a.title || !a.journal || !a.year || a.authors.length===0){ const b = await fetchPubMedByDOI(doi, a.title); a = mergeRecords(a,b); }
+    return a;
+  }else if(type==='pmid'){
+    const pmid = normalizePMID(id);
+    let a = await pubmedSummaryByPMID(pmid);
+    if(a?.doi){ const b = await fetchFromCrossRef(a.doi); a = mergeRecords(a,b); }
+    return a;
+  }
+  throw new Error('Unknown identifier type');
+}
+
+// --------------------------- State & Cache ---------------------------
+const state={ records:[], index:new Map(), sort:'year_desc', query:'' };
+function saveCache(){ try{ const minimal=state.records.map(r=>({ title:r.title,journal:r.journal,year:r.year,authors:r.authors, doi:r.doi,pmid:r.pmid,sources:r.sources,_abstract:r._abstract, _authorsExpanded:r._authorsExpanded||false,_abstractShown:r._abstractShown||false })); localStorage.setItem(CACHE_KEY, JSON.stringify(minimal)); }catch(e){ /* ignore */ }}
+function loadCache(){ try{ const raw=localStorage.getItem(CACHE_KEY); if(!raw) return false; const arr=JSON.parse(raw); if(!Array.isArray(arr)) return false; state.records=[]; state.index=new Map(); for(const r of arr){ addRecord(r); } return state.records.length>0; }catch(e){ return false; }}
+function addRecord(rec){ const key=uniqKey(rec); const existing=state.index.get(key); if(existing){ const merged=mergeRecords(existing,rec); merged._authorsExpanded=merged._authorsExpanded||existing._authorsExpanded||false; merged._abstractShown=merged._abstractShown||existing._abstractShown||false; state.index.set(key,merged); const idx=state.records.indexOf(existing); if(idx>=0) state.records[idx]=merged; return false; } else { state.index.set(key,rec); state.records.push(rec); return true; }}
+function filteredAndSorted(){ const q=state.query.trim().toLowerCase(); const sortKey=state.sort; const list=state.records.filter(r=>{ if(!q) return true; const fields=[r.title,r.journal,formatAuthors(r.authors), r.year?.toString(),r.doi,r.pmid]; return fields.some(f=>f && String(f).toLowerCase().includes(q)); }).slice(); const cmp=compareBy(sortKey); list.sort((a,b)=>{ return cmp(a,b); }); return list; }
+
+// Background: resolve missing PMIDs once per entry
+async function resolveAllMissingPMIDs(){
+  for(const r of state.records){
+    if(!r.pmid){
+      let pmid = null;
+      if(r.doi){ const pm = await fetchPubMedByDOI(r.doi, r.title); pmid = pm?.pmid || null; }
+      if(!pmid && r.title){ pmid = await fetchPMIDByMetadata(r.title, r.year); }
+      if(pmid){ r.pmid = pmid; saveCache(); render(); }
+    }
+  }
+}
+
+// --------------------------- Rendering ---------------------------
+function bucketForYear(y){ if(!y) return 'Unknown Year'; const end = y + (5 - (y % 5 || 5)); const start = end - 4; return `${start}-${end}`; }
+function compareBy(sortKey){ const collator=new Intl.Collator('en',{sensitivity:'base',numeric:true}); function val(rec){ switch(sortKey){ case 'title_az': return rec.title||''; case 'title_za': return rec.title||''; case 'journal_az': return rec.journal||''; case 'author_az': return (rec.authors&&rec.authors.length>0)?(typeof rec.authors[0]==='string'?rec.authors[0]:(rec.authors[0].family||rec.authors[0].last||'')) : ''; case 'year_asc': return rec.year||0; case 'year_desc': return rec.year||0; default: return rec.year||0; } } return (a,b)=>{ const va=val(a), vb=val(b); if(sortKey==='year_desc') return vb-va; if(sortKey==='year_asc') return va-vb; if(sortKey==='title_za') return collator.compare(vb,va); return collator.compare(va,vb); }; }
+
+function formatAuthors(authors){ if(!Array.isArray(authors) || authors.length===0) return '—'; return authors.map(a => { if(typeof a === 'string') return a; const family = a.family || a.last || a.lastname || a.surname || ''; const given = a.given || a.first || a.forename || ''; const initials = given ? given.split(/\s+/).map(w=>w[0]).join('').replace(/[^A-Za-z]/g,'') : ''; return (family && initials) ? `${family}, ${initials}` : (family || given || '—'); }).join('; '); }
+function displayAuthors(rec){ const authors = rec.authors || []; if(!rec._authorsExpanded && authors.length>12){ const head = authors.slice(0,2); const tail = authors.slice(-2); return formatAuthors(head) + ' … ' + formatAuthors(tail) + ' '; } return formatAuthors(authors); }
+
+function render(){ const container=document.getElementById('groups'); container.innerHTML=''; const list=filteredAndSorted(); const sortKey=state.sort; const groupByYear = (sortKey==='year_desc' || sortKey==='year_asc'); if(groupByYear){ const buckets=new Map(); for(const r of list){ const b=bucketForYear(r.year); if(!buckets.has(b)) buckets.set(b, []); buckets.get(b).push(r); } const order=Array.from(buckets.keys()).sort((a,b)=>{ const ea = a==='Unknown Year'? -Infinity : parseInt(a.split('-')[1],10); const eb = b==='Unknown Year'? -Infinity : parseInt(b.split('-')[1],10); return (sortKey==='year_desc') ? (eb-ea) : (ea-eb); }); for(const label of order){ const groupDiv=document.createElement('div'); groupDiv.className='group'; const header=document.createElement('div'); header.className='group-header'; const h3=document.createElement('h3'); h3.textContent=label; const count=document.createElement('div'); count.className='group-count'; count.textContent=`${buckets.get(label).length} entr${buckets.get(label).length===1?'y':'ies'}`; header.appendChild(h3); header.appendChild(count); const entries=document.createElement('div'); entries.className='entries'; header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); }); for(const r of buckets.get(label)) entries.appendChild(renderEntry(r)); groupDiv.appendChild(header); groupDiv.appendChild(entries); container.appendChild(groupDiv); } } else { const groupDiv=document.createElement('div'); groupDiv.className='group'; const header=document.createElement('div'); header.className='group-header'; const h3=document.createElement('h3'); h3.textContent='All entries'; const count=document.createElement('div'); count.className='group-count'; count.textContent=`${list.length} entr${list.length===1?'y':'ies'}`; header.appendChild(h3); header.appendChild(count); const entries=document.createElement('div'); entries.className='entries'; header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); }); for(const r of list) entries.appendChild(renderEntry(r)); groupDiv.appendChild(header); groupDiv.appendChild(entries); container.appendChild(groupDiv); } }
+
+function renderEntry(r){ const e=document.createElement('div'); e.className='entry'; const title=r.title||'(title unavailable)'; const journal=r.journal||'—'; const year=r.year||'—'; const line=document.createElement('div'); if(r.doi){ const doiLink=`https://doi.org/${r.doi}`; line.innerHTML=`<span class="ok">•</span> <a class="link entry-title" href="${doiLink}" target="_blank" rel="noopener">${title}</a>`; } else { line.innerHTML=`<span class="ok">•</span> <strong class="entry-title">${title}</strong>`; } const meta=document.createElement('div'); meta.className='meta'; const authorsDisplay=displayAuthors(r); meta.innerHTML=`${authorsDisplay} \u00B7 <em>${journal}</em> \u00B7 ${year}`; const controls=document.createElement('div'); controls.className='row';
+  // Always show PMID inline
+  const pmidWrap=document.createElement('div'); pmidWrap.className='pmid-wrap'; const label=document.createElement('span'); label.textContent='PMID:'; const codeEl=document.createElement('code'); codeEl.textContent=r.pmid || '—'; const copyBtn=document.createElement('button'); copyBtn.className='pmid-copy'; copyBtn.setAttribute('aria-label','Copy PMID'); copyBtn.title='Copy PMID'; copyBtn.textContent='\uD83D\uDCCB'; if(!r.pmid){ copyBtn.disabled=true; copyBtn.title='No PMID available'; } copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(String(r.pmid)); setStatus('PMID copied to clipboard'); setTimeout(()=>setStatus(''),1200); }catch(err){ setStatus('Unable to copy PMID'); setTimeout(()=>setStatus(''),1500); } }); pmidWrap.appendChild(label); pmidWrap.appendChild(codeEl); pmidWrap.appendChild(copyBtn); controls.appendChild(pmidWrap);
+  const authorsBtn=document.createElement('button'); authorsBtn.className='mini-btn'; const needsCollapse=(r.authors||[]).length>12; authorsBtn.textContent=(!r._authorsExpanded && needsCollapse)?'Expand authors':(needsCollapse?'Collapse authors':'Authors'); authorsBtn.disabled=!needsCollapse; authorsBtn.addEventListener('click',()=>{ r._authorsExpanded=!r._authorsExpanded; saveCache(); render(); });
+  const absBtn=document.createElement('button'); absBtn.className='mini-btn'; absBtn.textContent=r._abstractShown?'Hide abstract':'Show abstract'; const absContainer=document.createElement('div'); absContainer.className='abstract'+(r._abstractShown?'':' hidden'); absContainer.textContent=r._abstractShown?(r._abstract||'(No abstract available)'):''; absBtn.addEventListener('click', async ()=>{ if(!r._abstractShown){ setStatus('Fetching abstract...'); const abs=await ensureAbstract(r); r._abstractShown=true; r._abstract=abs||r._abstract||null; saveCache(); setStatus(''); } else { r._abstractShown=false; saveCache(); } render(); }); controls.appendChild(authorsBtn); controls.appendChild(absBtn); e.appendChild(line); e.appendChild(meta); e.appendChild(controls); e.appendChild(absContainer); return e; }
+
+function setStatus(msg){ const s=document.getElementById('status'); s.textContent=msg||''; }
+
+async function init(){ const hadCache=loadCache(); if(hadCache){ render(); setStatus(`Loaded ${state.records.length} record(s) from local cache.`); // Resolve missing PMIDs in background
+  resolveAllMissingPMIDs(); return; }
+  setStatus('Fetching metadata from CrossRef with PubMed fallback...'); let errors=0; for(const ident of initialIdentifiers){ try{ const rec=await resolveIdentifier(ident); addRecord(rec); render(); setStatus(`Loaded ${state.records.length} record(s).`); }catch(err){ errors++; setStatus(`Loaded ${state.records.length} record(s). Errors so far: ${errors}`); } }
+  saveCache(); setStatus(`Loaded ${state.records.length} record(s). Ready.`);
+  // Background: refine PMIDs
+  resolveAllMissingPMIDs();
+}
+
+// Search/sort/reset/add
+const searchEl=document.getElementById('search'); searchEl.addEventListener('input',(e)=>{ state.query=e.target.value; render(); });
+const sortEl=document.getElementById('sort'); sortEl.addEventListener('change',(e)=>{ state.sort=e.target.value; render(); });
+const resetEl=document.getElementById('reset'); resetEl.addEventListener('click',()=>{ state.query=''; searchEl.value=''; state.sort='year_desc'; sortEl.value='year_desc'; render(); });
+const idInput=document.getElementById('idInput'); async function addById(){ const raw=idInput.value.trim(); if(!raw){ setStatus('Please paste a DOI or a PubMed ID.'); return; } const ident=detectIdentifier(raw); if(!ident){ setStatus('Could not detect DOI or PMID.'); return; } setStatus('Adding entry...'); try{ const rec=await resolveIdentifier(ident); addRecord(rec); render(); saveCache(); setStatus('Entry added.'); idInput.value=''; // resolve missing PMIDs afterwards
+    resolveAllMissingPMIDs();
+  }catch(err){ setStatus('Failed to add entry.'); }}
+
+document.getElementById('addId').addEventListener('click',addById); idInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') addById(); });
+
+init();
+</script>
+</body>
+</html>
