@@ -795,22 +795,44 @@ function mergeRecords(a,b){
   return out;
 }
 
-async function fetchFromCrossRef(doi){
-  const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}?mailto=${encodeURIComponent(CONTACT_EMAIL)}`;
+async function fetchFromCrossRef(doi, contactEmail){
+  const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}?mailto=${encodeURIComponent(contactEmail)}`;
   try{
     const res = await fetch(url);
     if(!res.ok) throw new Error(`CrossRef ${res.status}`);
-    const json = await res.json(); const it = json?.message;
+    const json = await res.json();
+    const it = json?.message;
+
     const title = Array.isArray(it?.title) ? it.title[0] : it?.title || null;
     const journal = Array.isArray(it?.['container-title']) ? it['container-title'][0] : it?.['container-title'] || it?.shortContainerTitle || null;
-    const year = yearFromCrossRef(it);
-    const authors = Array.isArray(it?.author) ? it.author.map(a=>({family:a.family, given:a.given})) : [];
+    const year = yearFromCrossRef?.(it);
+    const authors = Array.isArray(it?.author) ? it.author.map(a => ({ family: a.family, given: a.given })) : [];
     const abstract = it?.abstract ? stripHtml(it.abstract) : null;
-    return { title, journal, year, authors, doi, pmid:null, sources:['CrossRef'], raw:{crossref:it}, _abstract: abstract };
+
+    // NEW: decide if this is a usable CrossRef result
+    const isUsable = Boolean(title || journal || year || (authors && authors.length));
+
+    return {
+      title, journal, year, authors,
+      doi, pmid: null,
+      sources: ['CrossRef'],
+      raw: { crossref: it },
+      _abstract: abstract,
+      __empty: !isUsable   // NEW: signal to the caller if this is effectively empty
+    };
   }catch(err){
-    return { title:null, journal:null, year:null, authors:[], doi, pmid:null, sources:['CrossRef(error)'], _abstract:null };
+    // Still return a structured “empty”, but mark the source as error
+    return {
+      title: null, journal: null, year: null, authors: [],
+      doi, pmid: null,
+      sources: ['CrossRef(error)'],
+      _abstract: null,
+      __empty: true,       // NEW: treat exceptions as empty to trigger fallback
+      __error: String(err)
+    };
   }
 }
+``
 
 async function pubmedSummaryByPMID(pmid){
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=json`;
