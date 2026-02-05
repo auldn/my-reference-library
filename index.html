@@ -834,6 +834,12 @@ async function fetchFromCrossRef(doi, contactEmail){
 }
 ``
 
+function classifyId(input) {
+  const v = String(input || '').trim();
+  if (/^[0-9]+$/.test(v)) return { kind: 'pmid', value: v }; // numeric → PMID
+  return { kind: 'doi', value: v };                           // otherwise treat as DOI
+}
+  
 async function pubmedSummaryByPMID(pmid){
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=json`;
   const res = await fetch(url);
