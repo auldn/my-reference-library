@@ -1,4 +1,5 @@
 
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -40,134 +41,123 @@
     .mini-btn{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:.5rem;padding:.2rem .45rem;font-size:.85em;cursor:pointer}
     .abstract{margin-top:.4rem;color:#cbd5e1;white-space:pre-wrap}
 
-    .pmid-wrap{display:inline-flex;align-items:center;gap:.35rem}
-    .pmid-copy{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:.35rem;padding:.05rem .35rem;font-size:.95em;cursor:pointer}
-    .pmid-copy[disabled]{opacity:.6;cursor:not-allowed}
+<script>
+const CONTACT_EMAIL = 'mailto:example@users.noreply';
+const CACHE_KEY = 'reflib_records_v1';
 
-    @media (max-width:800px){ .controls{grid-template-columns:1fr} }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h1>My Reference Library</h1>
-    <div class="controls">
-      <div class="control-card">
-        <h2>Find & Sort</h2>
-        <label for="search">Search (title, author, journal, year, DOI/PMID)</label>
-        <input id="search" type="text" placeholder="Type to filter entries..." />
-        <div class="row" style="margin-top:.5rem">
-          <label for="sort" style="margin:0">Sort</label>
-          <select id="sort">
-            <option value="year_desc">Year (newest first)</option>
-            <option value="year_asc">Year (oldest first)</option>
-            <option value="title_az">Title (A→Z)</option>
-            <option value="title_za">Title (Z→A)</option>
-            <option value="journal_az">Journal (A→Z)</option>
-            <option value="author_az">Author (A→Z, first author)</option>
-          </select>
-          <button id="reset">Reset</button>
-        </div>
-        <div id="status" class="status">Loading metadata...</div>
-      </div>
-      <div class="control-card">
-        <h2>Add Entries</h2>
-        <label for="idInput">Add by DOI or PubMed ID (PMID)</label>
-        <div class="row">
-          <input id="idInput" type="text" placeholder="Paste DOI (e.g., 10.1038/...) or PMID (digits)" />
-          <button id="addId">Add</button>
-        </div>
-        <div class="status">Tip: Paste a DOI (full URL or bare) or a PMID. The dashboard auto-detects and fetches metadata (CrossRef → PubMed).</div>
-      </div>
-    </div>
-
-    <div id="groups"></div>
-  </div>
-
-  <script>
-/** === Settings you already have === */
+<script>
+// Keep your constants:
 const CONTACT_EMAIL = 'mailto:example@users.noreply';
 
-/** Bump this whenever you change data shape or publish a new cleaned CSV */
-const CACHE_KEY = 'reflib_records_v2';  // <- incremented from v1
+// Bump the cache key so browsers don't reuse the old hard-coded data
+const CACHE_KEY = 'reflib_records_v2';
 
-/** Location of the cleaned CSV you uploaded */
-const CLEANED_CSV_URL = 'reference_library_cleaned.csv';
+// Path to the cleaned CSV sitting next to your HTML
+const CLEANED_CSV_URL = 'new_cleaned_records.csv';
 
-/** Utility: parse simple CSV (no embedded commas/quotes). For full CSV, use PapaParse. */
+// --- Minimal CSV parser for your 5-column file (Title, Authors, Journal, Year, PMID) ---
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/);
-  const header = lines.shift().split(',');
-  const idx = Object.fromEntries(header.map((h, i) => [h.trim().toLowerCase(), i]));
+  if (!lines.length) return [];
+  const header = lines.shift().split(',').map(h => h.trim().toLowerCase());
+  const idx = Object.fromEntries(header.map((h, i) => [h, i]));
+
   return lines.map(line => {
-    const cols = line.split(',').map(s => s.trim().replace(/^"|"$/g,''));
+    // Basic split: your cleaned file does not contain embedded commas in fields.
+    const cols = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
     return {
-      title:   cols[idx['title']]   || '',
-      authors: cols[idx['authors']] || '',
-      journal: cols[idx['journal']] || '',
-      year:    cols[idx['year']]    || '',
-      pmid:    cols[idx['pmid']]    || ''
-      // If you later add a DOI column, read it here as cols[idx['doi']]
+      title:   (cols[idx['title']]   || '').trim(),
+      authors: (cols[idx['authors']] || '').trim(),
+      journal: (cols[idx['journal']] || '').trim(),
+      year:    (cols[idx['year']]    || '').trim(),
+      pmid:    (cols[idx['pmid']]    || '').trim()
     };
   });
 }
 
-/** Build identifiers array to feed the rest of your app.
- *  - Prefer PMID for now (cleaned CSV includes it).
- *  - Deduplicate by (type,id).
- */
+// --- Convert rows into your app's identifier objects ---
 function buildIdentifiers(records) {
-  const seen = new Set();
   const out = [];
+  const seen = new Set();
   for (const r of records) {
-    // Prefer PMID if present
-    if (r.pmid && /^\d+$/.test(r.pmid)) {
-      const type = 'pmid';
-      const id = r.pmid; // store bare PMID, transform to URL later if needed
-      const key = `${type}:${id}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        out.push({ type, id, meta: { title: r.title, year: r.year, journal: r.journal, authors: r.authors }});
+    // Prefer PMIDs (cleaned to digits)
+    const pmid = (r.pmid || '').replace(/\D+/g, '');
+    if (!pmid) continue;
+
+    const key = `pmid:${pmid}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    out.push({
+      type: 'pmid',
+      id: pmid,
+      meta: {
+        title: r.title,
+        authors: r.authors,
+        journal: r.journal,
+        year: r.year
       }
-    }
-    // If you later store DOI in the CSV, you can add a fallback block here:
-    // else if (r.doi) { ... }
+    });
   }
   return out;
 }
 
-/** Persist in cache (optional, if your app uses localStorage) */
+// --- Cache helpers ---
 function saveToCache(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
   } catch (e) {
-    console.warn('Cache write failed', e);
+    console.warn('Cache write failed:', e);
   }
 }
 
-/** Main: load cleaned CSV and seed the page */
-async function seedFromCleanedCsv() {
-  const res = await fetch(CLEANED_CSV_URL, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Failed to load cleaned CSV: ${res.status}`);
-  const text = await res.text();
-  const records = parseCsv(text);
-  const identifiers = buildIdentifiers(records);
-
-  // Replace your previous hard-coded array with this:
-  window.initialIdentifiers = identifiers;
-
-  // Optional: cache for offline/fast reloads
-  saveToCache(CACHE_KEY, identifiers);
-
-  // From here, call your existing rendering / fetching pipeline
-  // e.g., renderLibrary(initialIdentifiers) or kick off your resolver
+function loadFromCache(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    // Optional: add staleness checks here if you want time-based invalidation
+    return Array.isArray(obj?.data) ? obj.data : null;
+  } catch {
+    return null;
+  }
 }
 
-// Kick it off
-seedFromCleanedCsv().catch(err => {
-  console.error(err);
-  // Fallback: you could use a minimal hard-coded list or show a message
-});
+// --- Main: load from CSV (with cache fallback) ---
+async function loadCleanedLibrary() {
+  // Try cache first (fast reloads)
+  const cached = loadFromCache(CACHE_KEY);
+  if (cached) {
+    window.initialIdentifiers = cached;
+    // If your app needs an initialization call, do it here:
+    // initLibrary(window.initialIdentifiers);
+  }
+
+  // Always attempt a fresh fetch to keep up-to-date
+  try {
+    const res = await fetch(CLEANED_CSV_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Failed to fetch ${CLEANED_CSV_URL}: ${res.status}`);
+    const text = await res.text();
+    const rows = parseCsv(text);
+    const identifiers = buildIdentifiers(rows);
+
+    window.initialIdentifiers = identifiers;
+    saveToCache(CACHE_KEY, identifiers);
+
+    // If your app needs to be called explicitly, uncomment:
+    // initLibrary(window.initialIdentifiers);
+
+    console.log(`Loaded ${identifiers.length} records from ${CLEANED_CSV_URL}`);
+  } catch (err) {
+    console.error('Error loading cleaned library:', err);
+    // If nothing cached, ensure the variable exists so the rest of the app doesn't break
+    window.initialIdentifiers = window.initialIdentifiers || [];
+  }
+}
+
+loadCleanedLibrary();
 </script>
+  
 
 function normalizeDOI(raw){ if(!raw) return null; let s=String(raw).trim(); s=s.replace(/^https?:\/\/doi\.org\//i,''); s=s.replace(/^doi:\s*/i,''); s=s.replace(/[\s<>\[\]()\u200B]+$/g,''); return s; }
 function normalizePMID(raw){ if(!raw) return null; const m=String(raw).trim().match(/\d+/); return m?m[0]:null; }
