@@ -73,11 +73,11 @@
       <div style="margin-top:.5rem">
         <span class="pill" id="netIndicator">Online</span>
         <span class="pill" id="queueIndicator">Queue: 0</span>
-      </div>
       
-      <button id="btn-download-csv" type="button" class="btn btn-outline-secondary">
+      <button id="btn-download-csv" type="button" class="btn btn-outline-secondary" style="margin-top:8px;">>
         Download CSV
       </button
+      </div>
 
     </div>
   </div>
@@ -561,131 +561,131 @@ async function loadCSV(){
   </script>
   
   <script>
-/**
- * ==== DATA ACCESS ADAPTER ====
- * Update this function to return an array of reference objects.
- * Each object can include: id, doi, pmid, title, authors (array or string),
- * journal, year, volume, issue, pages, url, addedAt, etc.
- */
-function getAllReferences() {
-  // --- Adapter A: If your app keeps an in-memory array -----------------------
-  if (Array.isArray(window.references) && window.references.length >= 0) {
-    return window.references;
-  }
-
-  // --- Adapter B: If you store in localStorage under 'reflib_items' ----------
-  try {
-    const raw = localStorage.getItem('reflib_items');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      // Expect either an array or an object with .items array
-      if (Array.isArray(parsed)) return parsed;
-      if (parsed && Array.isArray(parsed.items)) return parsed.items;
+  /**
+   * ==== DATA ACCESS ADAPTER ====
+   * Update this function to return an array of reference objects.
+   * Each object can include: id, doi, pmid, title, authors (array or string),
+   * journal, year, volume, issue, pages, url, addedAt, etc.
+   */
+  function getAllReferences() {
+    // --- Adapter A: If your app keeps an in-memory array -----------------------
+    if (Array.isArray(window.references) && window.references.length >= 0) {
+      return window.references;
     }
-  } catch (e) {
-    console.warn('Could not parse localStorage reflib_items', e);
+  
+    // --- Adapter B: If you store in localStorage under 'reflib_items' ----------
+    try {
+      const raw = localStorage.getItem('reflib_items');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Expect either an array or an object with .items array
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && Array.isArray(parsed.items)) return parsed.items;
+      }
+    } catch (e) {
+      console.warn('Could not parse localStorage reflib_items', e);
+    }
+  
+    // TODO: If you use IndexedDB or another key, replace the logic above.
+    return [];
   }
-
-  // TODO: If you use IndexedDB or another key, replace the logic above.
-  return [];
-}
-
-/**
- * Normalize a reference object to standard CSV columns.
- * Adjust mappings to match your actual data model keys.
- */
-function normalizeReference(ref) {
-  const authors = Array.isArray(ref.authors)
-    ? ref.authors.join('; ')
-    : (ref.authors || '');
-
-  return {
-    id: ref.id ?? '',
-    doi: ref.doi ?? '',
-    pmid: ref.pmid ?? '',
-    title: ref.title ?? '',
-    authors: authors,
-    journal: ref.journal ?? ref.journalTitle ?? '',
-    year: ref.year ?? '',
-    volume: ref.volume ?? '',
-    issue: ref.issue ?? '',
-    pages: ref.pages ?? '',
-    url: ref.url ?? ref.link ?? '',
-    addedAt: ref.addedAt ?? '' // ISO string if available
-  };
-}
-
-/**
- * Convert array of objects to CSV with safe quoting.
- * - Ensures headers in fixed order.
- * - Escapes quotes and wraps fields with commas/quotes/newlines in double quotes.
- */
-function toCSV(rows) {
-  const headers = [
-    'id', 'doi', 'pmid', 'title', 'authors',
-    'journal', 'year', 'volume', 'issue', 'pages', 'url', 'addedAt'
-  ];
-
-  const esc = (val) => {
-    const s = String(val ?? '');
-    // Escape double quotes by doubling them
-    const needsQuotes = /[",\n\r]/.test(s);
-    const escaped = s.replace(/"/g, '""');
-    return needsQuotes ? `"${escaped}"` : escaped;
-  };
-
-  const headerLine = headers.map(esc).join(',');
-  const lines = rows.map(row => {
-    const norm = normalizeReference(row);
-    return headers.map(h => esc(norm[h])).join(',');
+  
+  /**
+   * Normalize a reference object to standard CSV columns.
+   * Adjust mappings to match your actual data model keys.
+   */
+  function normalizeReference(ref) {
+    const authors = Array.isArray(ref.authors)
+      ? ref.authors.join('; ')
+      : (ref.authors || '');
+  
+    return {
+      id: ref.id ?? '',
+      doi: ref.doi ?? '',
+      pmid: ref.pmid ?? '',
+      title: ref.title ?? '',
+      authors: authors,
+      journal: ref.journal ?? ref.journalTitle ?? '',
+      year: ref.year ?? '',
+      volume: ref.volume ?? '',
+      issue: ref.issue ?? '',
+      pages: ref.pages ?? '',
+      url: ref.url ?? ref.link ?? '',
+      addedAt: ref.addedAt ?? '' // ISO string if available
+    };
+  }
+  
+  /**
+   * Convert array of objects to CSV with safe quoting.
+   * - Ensures headers in fixed order.
+   * - Escapes quotes and wraps fields with commas/quotes/newlines in double quotes.
+   */
+  function toCSV(rows) {
+    const headers = [
+      'id', 'doi', 'pmid', 'title', 'authors',
+      'journal', 'year', 'volume', 'issue', 'pages', 'url', 'addedAt'
+    ];
+  
+    const esc = (val) => {
+      const s = String(val ?? '');
+      // Escape double quotes by doubling them
+      const needsQuotes = /[",\n\r]/.test(s);
+      const escaped = s.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+  
+    const headerLine = headers.map(esc).join(',');
+    const lines = rows.map(row => {
+      const norm = normalizeReference(row);
+      return headers.map(h => esc(norm[h])).join(',');
+    });
+  
+    return [headerLine, ...lines].join('\r\n');
+  }
+  
+  /**
+   * Create and trigger a CSV download in the browser.
+   */
+  function downloadCSV() {
+    const refs = getAllReferences();
+    if (!refs || refs.length === 0) {
+      alert('Your library is empty—no references to export.');
+      return;
+    }
+  
+    const csv = toCSV(refs);
+  
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+  
+    // Suggest a filename with date
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const filename = `references_${y}-${m}-${d}.csv`;
+  
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+  
+    // Cleanup
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }, 0);
+  }
+  
+  // Wire the button on DOM ready
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btn-download-csv');
+    if (btn) {
+      btn.addEventListener('click', downloadCSV);
+    }
   });
-
-  return [headerLine, ...lines].join('\r\n');
-}
-
-/**
- * Create and trigger a CSV download in the browser.
- */
-function downloadCSV() {
-  const refs = getAllReferences();
-  if (!refs || refs.length === 0) {
-    alert('Your library is empty—no references to export.');
-    return;
-  }
-
-  const csv = toCSV(refs);
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-
-  // Suggest a filename with date
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  const filename = `references_${y}-${m}-${d}.csv`;
-
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-
-  // Cleanup
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  }, 0);
-}
-
-// Wire the button on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('btn-download-csv');
-  if (btn) {
-    btn.addEventListener('click', downloadCSV);
-  }
-});
 </script>
 </body>
 </html>
