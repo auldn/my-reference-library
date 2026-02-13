@@ -63,23 +63,26 @@
     </div>
 
     <div class="control-card">
-      <h2>Add by ID</h2>
-      <label for="idInput">Paste a DOI or PMID</label>
-      <div class="row">
-        <input id="idInput" type="text" placeholder="10.xxxx/… or 12345678" style="flex:1"/>
-        <button id="addId">Add</button>
-      </div>
-      <div class="status" style="margin-top:.5rem">Adds immediately; fetches metadata in background.</div>
-      <div style="margin-top:.5rem">
-        <span class="pill" id="netIndicator">Online</span>
-        <span class="pill" id="queueIndicator">Queue: 0</span>
-      
-        <button id="btn-download-csv" type="button" class="btn btn-outline-secondary" style="margin-top:8px;">
-          Download CSV
-        </button>
-      </div>
+     <h2>Add by ID</h2>
+     <label for="idInput">Paste a DOI or PMID</label>
+     <div class="row">
+       <input id="idInput" type="text" placeholder="10.xxxx/… or 12345678" style="flex:1" />
+       <button id="addId">Add</button>
+     </div>
+     <div class="status" style="margin-top:.5rem">
+       Adds immediately; fetches metadata in background.
+     </div>
+     <div style="margin-top:.5rem">
+       <span class="pill" id="netIndicator">Online</span>
+       <span class="pill" id="queueIndicator">Queue: 0</span>
+  
+       <!-- ✅ Corrected button -->
+       <button id="btn-download-csv" type="button" class="btn btn-outline-secondary" style="margin-top:8px;">
+         Download CSV
+       </button>
+     </div>
+   </div>
 
-    </div>
   </div>
 
   <div id="groups"></div>
