@@ -318,7 +318,8 @@ function compareBy(sortKey){
       case 'title_az': case 'title_za': return r.title||'';
       case 'journal_az': return r.journal||'';
       case 'author_az': return (formatAuthors(r.authors).split(';')[0]||'').trim();
-      case 'year_asc': case 'year_desc': default: return parseInt(r.year,10)||0;
+      case 'last_surname_az': return lastSurnameOf(r);
+ case 'year_asc': case 'year_desc': default: return parseInt(r.year,10)||0;
     }
   }
   return (a,b)=>{
@@ -369,8 +370,8 @@ function render(){
 
   // Decide grouping strategy
   const groupByYear    = (state.sort === 'year_desc' || state.sort === 'year_asc');
-  const groupByJournal = (state.sort === 'journal_az'); // NEW: group when Journal A–Z is active
-  const groupByLastSurname = (state.sort === 'last_surname_az');
+  const groupByJournal = (state.sort === 'journal_az');
+  const groupByLastSurname = (state.sort === 'last_surname_az'); // NEW: group when Journal A–Z is active
 
   if (groupByYear) {
     // ----- existing year grouping -----
