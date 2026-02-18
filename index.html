@@ -550,6 +550,57 @@ async function enrichAllIncremental(){
   setStatus(`Ready. Enriched ${done}, skipped ${skipped}.`);
 }
 
+
+
+// =============================
+// Export / Download Helpers
+// =============================
+function collectAllPmids(){
+  const set = new Set();
+  for (const r of state.records){
+    const p = normalizePMID(r && r.pmid);
+    if (p) set.add(p);
+  }
+  return Array.from(set);
+}
+function downloadTextFile(filename, text){
+  try{
+    const blob = new Blob([text], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return true;
+  }catch(e){
+    try{ // Fallback
+      const a = document.createElement('a');
+      a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return true;
+    }catch(_){}
+  }
+  return false;
+}
+function downloadAllPmids(){
+  const pmids = collectAllPmids();
+  const content = pmids.join('\n') + (pmids.length ? '\n' : '');
+  const ok = downloadTextFile('all_pmids.txt', content);
+  if (ok) setStatus(`Saved ${pmids.length} PMID${pmids.length===1?'':'s'} to all_pmids.txt`);
+  else setStatus('Download failed');
+}
+
+// In wireUI()
+const dlBtn = document.getElementById('downloadPmids');
+if (dlBtn) dlBtn.addEventListener('click', downloadAllPmids);
+
+
 // =============================
 //           Boot
 // =============================
