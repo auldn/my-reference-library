@@ -618,6 +618,8 @@ async function loadCSV(){
       }
     }
   } catch (e) { /* ignore */ }
+  
+  await new Promise(r => setTimeout(r, 0));
 
   // 2) Load newline-delimited PMIDs and add them one at a time
   try {
