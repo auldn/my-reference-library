@@ -341,6 +341,32 @@ function filteredAndSorted(){
   return list;
 }
 
+
+// Senior Author (Supervisor) helper
+function seniorAuthorsOf(r){
+  const arr = Array.isArray(r.authors) ? r.authors : [];
+  if (arr.length === 0) return ['Unknown Senior Author'];
+  // By default, we assume a single senior author (last author).
+  // You can override per-record by setting r._seniorCount = 2 or 3,
+  // or r._seniorOverride = ['Surname, Initials', ...] to specify exact seniors.
+  const toDisplay = (a) => {
+    if (typeof a === 'string') return a;
+    const family = a.family || a.last || a.lastname || a.surname || '';
+    const given  = a.given  || a.first || a.forename || '';
+    const initials = given ? given.split(/\s+/).map(w=>w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
+    return (family && initials) ? `${family}, ${initials}` : (family || given || '—');
+  };
+  if (Array.isArray(r._seniorOverride) && r._seniorOverride.length){
+    return r._seniorOverride.slice(0,3).map(x=>String(x).trim()).filter(Boolean);
+  }
+  let count = 1;
+  if (typeof r._seniorCount === 'number') {
+    count = Math.min(Math.max(1, Math.floor(r._seniorCount)), Math.min(3, arr.length));
+  }
+  const pick = arr.slice(-count);
+  return pick.map(toDisplay);
+}
+
 function render(){
   document.getElementById('queueIndicator').textContent = `Queue: ${state.queueSize}`;
   const container = document.getElementById('groups');
@@ -351,6 +377,7 @@ function render(){
   // Decide grouping strategy
   const groupByYear    = (state.sort === 'year_desc' || state.sort === 'year_asc');
   const groupByJournal = (state.sort === 'journal_az'); // NEW: group when Journal A–Z is active
+    const groupBySenior = (state.sort === 'senior_az');
 
   if (groupByYear) {
     // ----- existing year grouping -----
