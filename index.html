@@ -395,7 +395,48 @@ async function pump(){
 // =============================
 //        Cache (versioned)
 // =============================
-function packCache(){ return { version: CACHE_VERSION, records: state.records }; }
+// Trim heavy fields before persisting to localStorage to avoid quota issues.
+// Keeps only what's needed for instant render & skip logic on refresh.
+function packCache(){
+  const trimmed = state.records.map((r) => {
+    // Normalize IDs
+    const doiNorm  = normalizeDOI(r.doi);
+    const pmidNorm = normalizePMID(r.pmid);
+
+    // Light authors: keep family & given (no raw payloads)
+    const authors = Array.isArray(r.authors)
+      ? r.authors.map((a) => {
+          if (typeof a === 'string') return a; // already compact
+          return {
+            family: a?.family || a?.last || a?.lastname || a?.surname || '',
+            given:  a?.given  || a?.first || a?.forename || ''
+          };
+        })
+      : [];
+
+    // Cap keywords to a reasonable number for UI (adjust as you like)
+    const keywords = Array.isArray(r.keywords) ? r.keywords.slice(0, 24) : [];
+
+    // Return a lightweight record; intentionally exclude:
+    //  - raw  (huge API payloads)
+    //  - _abstract (long text; fetched on demand)
+    //  - any transient/internal fields
+    return {
+      title:   r.title || '',
+      journal: r.journal || '',
+      year:    r.year || '',
+      authors,
+      doi:     doiNorm || null,
+      pmid:    pmidNorm || null,
+      keywords,
+      sources: Array.isArray(r.sources) ? Array.from(new Set(r.sources)) : [],
+      // Keep minimal UI flags if you rely on them; omit _abstract to save space.
+      _abstractShown: Boolean(r._abstractShown)
+    };
+  });
+
+  return { version: CACHE_VERSION, records: trimmed };
+}
 function unpackCache(obj){ if(!obj || obj.version!==CACHE_VERSION || !Array.isArray(obj.records)) return null; return obj.records; }
 
 // Put near your Cache helpers
