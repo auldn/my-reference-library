@@ -82,20 +82,20 @@
 
 <script>
 // =============================
-// Configuration & Constants
+//   Configuration & Constants
 // =============================
 const DATA_CSV = 'new_cleaned_records.csv'; // keep this next to new_index.html
 const CACHE_KEY = 'reflib_v7_keywords_inc';
-const CACHE_VERSION = 1; // bump to invalidate all cached data
+const CACHE_VERSION = 1;            // bump to invalidate all cached data
 const CONTACT_EMAIL = 'example@users.noreply';
 const ID_QUEUE_FILE = 'id_queue_pmids.txt';
 
 // Concurrency and rate limiting (be kind to public APIs)
-const MAX_CONCURRENT = 2; // parallel lookups
-const MIN_DELAY_MS = 400; // ~2.5 req/s aggregate
+const MAX_CONCURRENT = 2;        // parallel lookups
+const MIN_DELAY_MS = 400;        // ~2.5 req/s aggregate
 
 // =============================
-// CSV Utilities
+//         CSV Utilities
 // =============================
 function csvToRows(text){
   const rows=[]; let i=0, field='', row=[], q=false;
@@ -104,11 +104,11 @@ function csvToRows(text){
   while(i<text.length){
     const c=text[i++];
     if(q){
-      if(c==='\"'){
-        if(text[i]==='\"'){ field+='\"'; i++; } else { q=false; }
+      if(c==='"'){
+        if(text[i]==='"'){ field+='"'; i++; } else { q=false; }
       } else field+=c;
     } else {
-      if(c==='\"') q=true;
+      if(c==='"') q=true;
       else if(c===',') pushField();
       else if(c==='\n'){ pushField(); pushRow(); }
       else if(c==='\r'){ /* ignore */ }
@@ -120,41 +120,31 @@ function csvToRows(text){
   return rows;
 }
 function rowsToObjects(rows){
-  if(!rows || !rows.length) return [];
+  if(!rows||!rows.length) return [];
   const header = rows[0].map(h=>String(h||'').trim().toLowerCase());
   const idx = Object.fromEntries(header.map((h,i)=>[h,i]));
   const get=(r,k)=>{ const i=idx[k]; return i==null?'':String(r[i]||'').trim(); };
   const out=[];
   for(let k=1;k<rows.length;k++){
-    const r=rows[k]; if(!r || r.every(v=>String(v||'').trim()==='')) continue;
+    const r=rows[k]; if(!r||r.every(v=>String(v||'').trim()==='')) continue;
     out.push({
-      title: get(r,'title'),
+      title:  get(r,'title'),
       authors:get(r,'authors'),
       journal:get(r,'journal'),
-      year: get(r,'year'),
-      pmid: get(r,'pmid')
+      year:   get(r,'year'),
+      pmid:   get(r,'pmid')
     });
   }
   return out;
 }
 
 // =============================
-// Normalization Helpers
+//     Normalization Helpers
 // =============================
-function normalizeDOI(raw){
-  if(!raw) return null;
-  let s=String(raw).trim();
-  s=s.replace(/^https?:\/\/doi\.org\//i,'');
-  s=s.replace(/^doi:\s*/i,'');
-  s=s.replace(/\s<>[\\u200B]+$/g,'');
-  return s || null;
-}
-function normalizePMID(raw){
-  if(!raw) return null;
-  const m=String(raw).trim().match(/\d+/);
-  return m ? m[0] : null;
-}
+function normalizeDOI(raw){ if(!raw) return null; let s=String(raw).trim(); s=s.replace(/^https?:\/\/doi\.org\//i,''); s=s.replace(/^doi:\s*/i,''); s=s.replace(/[\s<>\[\]()\u200B]+$/g,''); return s||null; }
+function normalizePMID(raw){ if(!raw) return null; const m=String(raw).trim().match(/\d+/); return m?m[0]:null; }
 function stripHtml(s){ return String(s||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); }
+
 // Title similarity helpers
 function normalizeTitle(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
 function titleWordSet(t){ return new Set(normalizeTitle(t).split(' ').filter(w=>w.length>2)); }
@@ -162,7 +152,7 @@ function jaccard(a,b){ const ia=new Set(); for(const x of a){ if(b.has(x)) ia.ad
 function scoreTitleMatch(t1,t2){ return jaccard(titleWordSet(t1), titleWordSet(t2)); }
 
 // =============================
-// API Clients
+//         API Clients
 // =============================
 async function crossrefByDOI(doi){
   const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}?mailto=${encodeURIComponent(CONTACT_EMAIL)}`;
@@ -178,10 +168,9 @@ async function crossrefByDOI(doi){
     const authors = Array.isArray(it?.author) ? it.author.map(a=>({family:a.family, given:a.given})) : [];
     const abstract = it?.abstract ? stripHtml(it.abstract) : null;
     return { title, journal, year, authors, doi, pmid:null, keywords:[], sources:['CrossRef'], raw:{crossref:it}, _abstract:abstract };
-  }catch(err){
-    return { title:null, journal:null, year:null, authors:[], doi, pmid:null, keywords:[], sources:['CrossRef(error)'], _abstract:null, _error:String(err) };
-  }
+  }catch(err){ return { title:null, journal:null, year:null, authors:[], doi, pmid:null, keywords:[], sources:['CrossRef(error)'], _abstract:null, _error:String(err) }; }
 }
+
 async function pubmedSummaryByPMID(pmid){
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=json`;
   const res = await fetch(url);
@@ -203,10 +192,11 @@ async function pubmedSummaryByPMID(pmid){
   if(Array.isArray(s?.keywords)) keywords = s.keywords.map(k=> String(k||'').trim()).filter(Boolean);
   if(keywords.length===0 && Array.isArray(s?.meshheadinglist)){
     keywords = s.meshheadinglist.map(m=> typeof m==='string'? m : (m?.meshheading||''))
-      .map(x=>String(x||'').trim()).filter(Boolean);
+                                .map(x=>String(x||'').trim()).filter(Boolean);
   }
   return { title, journal, year, authors, doi, pmid, keywords, sources:['PubMed'], raw:{pubmed:s} };
 }
+
 async function pubmedSearchByDOI(doi, recTitle){
   const term = encodeURIComponent(doi);
   const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${term}`;
@@ -231,6 +221,7 @@ async function pubmedSearchByDOI(doi, recTitle){
   const pmid = String(best?.uid || pmids[0]);
   return pubmedSummaryByPMID(pmid);
 }
+
 async function pubmedAbstractByPMID(pmid){
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=xml`;
   try{
@@ -243,11 +234,11 @@ async function pubmedAbstractByPMID(pmid){
 }
 
 // =============================
-// Merge / Dedup Utilities
+//     Merge / Dedup Utilities
 // =============================
 function mergeRecords(a,b){
   const out={...a};
-  ['title','journal','year'].forEach(f=>{ if((!out[f] || out[f]==='—') && b&&b[f]) out[f]=b[f]; });
+  ['title','journal','year'].forEach(f=>{ if((!out[f]||out[f]==='—') && b&&b[f]) out[f]=b[f]; });
   if((!out.authors || out.authors.length===0) && b?.authors?.length) out.authors=b.authors;
   out.doi = normalizeDOI(out.doi) || normalizeDOI(b?.doi) || null;
   out.pmid = normalizePMID(out.pmid) || normalizePMID(b?.pmid) || null;
@@ -255,16 +246,17 @@ function mergeRecords(a,b){
   const bk = Array.isArray(b?.keywords)? b.keywords: [];
   out.keywords = Array.from(new Set([...ak, ...bk].map(x=>String(x||'').trim()).filter(Boolean)));
   out.sources = Array.from(new Set([...(a.sources||[]), ...((b&&b.sources)||[])]));
-  out._abstract = out._abstract || b?.__abstract || b?._abstract || null;
+  out._abstract = out._abstract || b?._abstract || null;
   out.raw = {...(a.raw||{}), ...(b?.raw||{})};
   return out;
 }
 function titleNearDuplicate(a,b){ if(!a.title || !b.title) return false; return scoreTitleMatch(a.title,b.title) >= 0.85; }
 
 // =============================
-// State
+//            State
 // =============================
 const state = { records:[], index:new Map(), sort:'year_desc', query:'', queueSize:0 };
+
 function addOrMerge(rec){
   rec = {...rec};
   rec.doi = normalizeDOI(rec.doi); rec.pmid = normalizePMID(rec.pmid);
@@ -291,9 +283,10 @@ function addOrMerge(rec){
     return true;
   }
 }
+  
 
 // =============================
-// Rendering
+//        Rendering
 // =============================
 function formatAuthors(authors){
   if(!Array.isArray(authors) || authors.length===0) return '—';
@@ -305,7 +298,9 @@ function formatAuthors(authors){
     return (family && initials) ? `${family}, ${initials}` : (family || given || '—');
   }).join('; ');
 }
+
 function bucketForYear(y){ const n=parseInt(y,10); if(!n) return 'Unknown Year'; const end = n + (5 - (n % 5 || 5)); const start=end-4; return `${start}-${end}`; }
+
 function compareBy(sortKey){
   const coll = new Intl.Collator('en',{sensitivity:'base',numeric:true});
   function val(r){
@@ -324,8 +319,9 @@ function compareBy(sortKey){
     return coll.compare(va,vb);
   };
 }
+
 function filteredAndSorted(){
-  const q=(state.query||'').toLowerCase();
+  const q=((state.query)||'').toLowerCase();
   const list = state.records.filter(r=>{
     if(!q) return true;
     const kws = (Array.isArray(r.keywords)? r.keywords.join(' '):'');
@@ -335,6 +331,7 @@ function filteredAndSorted(){
   list.sort(compareBy(state.sort));
   return list;
 }
+
 function render(){
   document.getElementById('queueIndicator').textContent = `Queue: ${state.queueSize}`;
   const container=document.getElementById('groups');
@@ -375,6 +372,7 @@ function render(){
     grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
   }
 }
+
 function renderEntry(r){
   const e=document.createElement('div'); e.className='entry';
   const title=r.title||'(title unavailable)';
@@ -384,6 +382,7 @@ function renderEntry(r){
   else line.innerHTML=`<span class="ok">•</span> <strong class="entry-title">${title}</strong>`;
   const meta=document.createElement('div'); meta.className='meta';
   meta.innerHTML=`${formatAuthors(r.authors)} · <em>${journal}</em> · ${year}`;
+
   const controls=document.createElement('div'); controls.className='row';
   const pmidWrap=document.createElement('div'); pmidWrap.className='pmid-wrap';
   const label=document.createElement('span'); label.textContent='PMID:';
@@ -391,6 +390,7 @@ function renderEntry(r){
   const copyBtn=document.createElement('button'); copyBtn.className='mini-btn'; copyBtn.textContent='📋'; if(!r.pmid) copyBtn.disabled=true;
   copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(String(r.pmid)); setStatus('PMID copied'); setTimeout(()=>setStatus(''),1200);}catch{ setStatus('Clipboard failed'); setTimeout(()=>setStatus(''),1500);} });
   pmidWrap.appendChild(label); pmidWrap.appendChild(codeEl); pmidWrap.appendChild(copyBtn);
+
   const absBtn=document.createElement('button'); absBtn.className='mini-btn'; absBtn.textContent=r._abstractShown?'Hide abstract':'Show abstract';
   const absContainer=document.createElement('div'); absContainer.className='abstract'+(r._abstractShown?'':' hidden'); absContainer.textContent=r._abstractShown?(r._abstract||'(No abstract available)'):'';
   absBtn.addEventListener('click', async ()=>{
@@ -398,20 +398,23 @@ function renderEntry(r){
     else { r._abstractShown=false; }
     render();
   });
+
   // Keywords row
   const kwWrap=document.createElement('div'); kwWrap.className='kw-wrap';
   (Array.isArray(r.keywords)? r.keywords: []).slice(0,24).forEach(kw=>{
     const span=document.createElement('span'); span.className='kw'; span.textContent=kw; kwWrap.appendChild(span);
   });
+
   controls.appendChild(pmidWrap);
   controls.appendChild(absBtn);
   e.appendChild(line); e.appendChild(meta); e.appendChild(controls); if((r.keywords||[]).length) e.appendChild(kwWrap); e.appendChild(absContainer);
   return e;
 }
+
 function setStatus(msg){ document.getElementById('status').textContent = msg||''; }
 
 // =============================
-// Networking & Queue
+//        Networking & Queue
 // =============================
 let inFlight=0; const queue=[]; let lastRun=0;
 async function schedule(task){
@@ -432,16 +435,12 @@ async function pump(){
 }
 
 // =============================
-// Cache (versioned)
+//        Cache (versioned)
 // =============================
 function packCache(){ return { version: CACHE_VERSION, records: state.records }; }
-function unpackCache(obj){
-  if(!obj) return null;
-  if(obj.version!==CACHE_VERSION) return null;
-  if(!Array.isArray(obj.records)) return null;
-  return obj.records;
-}
-// Debounced + immediate writers
+function unpackCache(obj){ if(!obj || obj.version!==CACHE_VERSION || !Array.isArray(obj.records)) return null; return obj.records; }
+
+// Put near your Cache helpers
 let _saveCacheTimer = null;
 function saveCacheDebounced(delay = 250) {
   if (_saveCacheTimer) clearTimeout(_saveCacheTimer);
@@ -450,19 +449,12 @@ function saveCacheDebounced(delay = 250) {
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(packCache())); } catch (e) {}
   }, delay);
 }
-function saveCacheNow() {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(packCache()));
-  } catch (e) {
-    console.error('[cache] save NOW failed:', e);
-    setStatus('Local cache save failed — see console');
-  }
-}
 
 // Load PMIDs from id_queue_pmids.txt and add/enrich them one at a time
 async function loadPmidsQueue() {
   const res = await fetch(ID_QUEUE_FILE, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to fetch ${ID_QUEUE_FILE}: ${res.status}`);
+
   const text = await res.text();
   // Accepts plain PMIDs per line; ignores blank lines & lines starting with '#'
   const lines = text.split(/\r?\n/).map(s => s.trim()).filter(s => s && !s.startsWith('#'));
@@ -473,9 +465,9 @@ async function loadPmidsQueue() {
     // Be tolerant: if someone wrote "PMID: 12345678", extract the digits
     const m = line.match(/\d+/);
     if (!m) { skipped++; continue; }
-    const pmid = normalizePMID(m[0]);
+    const pmid = m[0];
 
-    // Skip if this PMID already exists AND is complete (prevents re-work after refresh)
+    // ✅ Skip if this PMID already exists AND is complete (prevents re-work after refresh)
     const existing = state.index.get(`pmid:${pmid}`);
     if (existing && recordIsComplete(existing)) {
       skipped++;
@@ -488,8 +480,8 @@ async function loadPmidsQueue() {
       const changed = addOrMerge(rec);
       if (changed) {
         addedOrUpdated++;
-        saveCacheDebounced(); // debounce is already defined in your script
-        render();             // repaint so the user sees each new record land
+        saveCacheDebounced();   // debounce is already defined in your script
+        render();               // repaint so the user sees each new record land
       }
       processed++;
       setStatus(`Processed ${processed}/${lines.length}… (added/updated: ${addedOrUpdated}, skipped: ${skipped})`);
@@ -500,12 +492,11 @@ async function loadPmidsQueue() {
     }
   }
 
-  saveCacheNow(); // ensure final write lands
   setStatus(`Done. Processed ${processed}/${lines.length}. Added/updated ${addedOrUpdated}, skipped ${skipped}.`);
 }
 
 // =============================
-// Resolution Pipeline
+//       Resolution Pipeline
 // =============================
 async function resolveIdentifier(ident){
   if(ident.type==='pmid'){
@@ -515,12 +506,12 @@ async function resolveIdentifier(ident){
   } else if(ident.type==='doi'){
     let a = await schedule(()=>crossrefByDOI(normalizeDOI(ident.id)));
     if(!a.title || !a.journal || !a.year || (a.authors||[]).length===0){
-      const b = await schedule(()=>pubmedSearchByDOI(normalizeDOI(ident.id), a.title)); a = mergeRecords(a,b);
-    }
+      const b = await schedule(()=>pubmedSearchByDOI(normalizeDOI(ident.id), a.title)); a = mergeRecords(a,b); }
     return a;
   }
   throw new Error('Unknown identifier type');
 }
+
 async function resolveMissingForRecord(rec){
   try{
     if(rec.pmid){
@@ -535,12 +526,15 @@ async function resolveMissingForRecord(rec){
     return rec;
   }catch(e){ return rec; }
 }
+
 function recordIsComplete(r){
   const hasCore = Boolean((r.title||'').trim()) && Boolean((r.journal||'').trim()) && (parseInt(r.year,10)||0)>0;
   const hasAuthors = Array.isArray(r.authors) && r.authors.length>0;
   const hasId = Boolean(r.pmid) || Boolean(r.doi);
   return hasCore && hasAuthors && hasId; // adjust if you want keywords mandatory
 }
+
+
 async function enrichAllIncremental(){
   const total = state.records.length; let done=0, skipped=0;
   for(let i=0; i<state.records.length; i++){
@@ -552,11 +546,10 @@ async function enrichAllIncremental(){
     done++; setStatus(`Enriched ${done}, skipped ${skipped}, of ${total}…`);
   }
   setStatus(`Ready. Enriched ${done}, skipped ${skipped}.`);
-  saveCacheNow(); // final flush after enrichment
 }
 
 // =============================
-// Boot
+//           Boot
 // =============================
 function wireUI(){
   const searchEl=document.getElementById('search');
@@ -572,25 +565,21 @@ function wireUI(){
   window.addEventListener('online', updateNet); window.addEventListener('offline', updateNet); updateNet();
   addBtn.addEventListener('click', addById);
   idInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addById(); });
-
-  // Flush cache on tab close
-  window.addEventListener('beforeunload', () => {
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify(packCache())); }
-    catch (e) { console.warn('[cache] beforeunload save failed', e); }
-  });
 }
+
 function classifyId(input){ const v=String(input||'').trim(); if(/^\d+$/.test(v)) return {type:'pmid', id:v}; if(/^10\./.test(v)||/^doi:/i.test(v)||/^https?:\/\/doi\.org\//i.test(v)) return {type:'doi', id:normalizeDOI(v)}; return null; }
+
 async function addById(){
   const raw=document.getElementById('idInput').value.trim(); if(!raw){ setStatus('Please paste a DOI or a PubMed ID.'); return; }
   const ident=classifyId(raw); if(!ident){ setStatus('Could not detect DOI or PMID.'); return; }
   setStatus('Adding entry…');
   try{
     const rec = await resolveIdentifier(ident);
-    addOrMerge(rec); render(); saveCacheDebounced(); saveCacheNow();
-    setStatus('Entry added.');
+    addOrMerge(rec); render(); saveCacheDebounced(); setStatus('Entry added.');
     document.getElementById('idInput').value='';
   }catch(err){ setStatus('Failed to add entry.'); }
 }
+
 async function loadCSV(){
   const res = await fetch(DATA_CSV, {cache:'no-store'});
   if(!res.ok) throw new Error(`Failed to fetch ${DATA_CSV}: ${res.status}`);
@@ -620,23 +609,20 @@ async function loadCSV(){
         state.records = cached;
         state.index = new Map();
         for (const r of state.records) {
-          // Normalize keys as we rebuild the index (prevents skip mismatches)
-          const doiNorm = normalizeDOI(r.doi);
-          if (doiNorm)  state.index.set(`doi:${doiNorm.toLowerCase()}`, r);
-          const pmidNorm = normalizePMID(r.pmid);
-          if (pmidNorm) state.index.set(`pmid:${pmidNorm}`, r);
+          if (r.doi)  state.index.set(`doi:${String(r.doi).toLowerCase()}`, r);
+          if (r.pmid) state.index.set(`pmid:${r.pmid}`, r);
         }
         hadCache = true;
-        render();
+        console.log('[cache] startup summary → records:', state.records.length, ', complete:', state.records.filter(recordIsComplete).length, ', incomplete:', state.records.length - state.records.filter(recordIsComplete).length, ', indexKeys:', state.index.size);
+render();
         setStatus(`Loaded ${state.records.length} record(s) from local cache.`);
       }
     }
   } catch (e) { /* ignore */ }
-
-  // Allow cache restoration + state.index rebuild to settle before queue
+  
   await new Promise(r => setTimeout(r, 0));
 
-  // 2) Load newline-delimited PMIDs and add them one at a time (Option B)
+  // 2) Load newline-delimited PMIDs and add them one at a time
   try {
     await loadPmidsQueue();
   } catch (err) {
