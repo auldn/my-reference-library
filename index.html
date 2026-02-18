@@ -290,15 +290,28 @@ function addOrMerge(rec){
 // =============================
 //        Rendering
 // =============================
-function formatAuthors(authors){
-  if(!Array.isArray(authors) || authors.length===0) return '—';
-  return authors.map(a=>{
-    if(typeof a==='string') return a;
-    const family = a.family||a.last||a.lastname||a.surname||'';
-    const given = a.given||a.first||a.forename||'';
-    const initials = given ? given.split(/\s+/).map(w=>w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
+function formatAuthors(authors, opts = {}){
+  const { truncate = false, head = 3, tail = 3 } = opts;
+
+  if (!Array.isArray(authors) || authors.length === 0) return '—';
+
+  const toDisplay = (a) => {
+    if (typeof a === 'string') return a;
+    const family = a.family || a.last || a.lastname || a.surname || '';
+    const given  = a.given  || a.first || a.forename || '';
+    const initials = given ? given.split(/\s+/).map(w => w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
     return (family && initials) ? `${family}, ${initials}` : (family || given || '—');
-  }).join('; ');
+  };
+
+  const list = authors.map(toDisplay);
+
+  if (truncate && authors.length >= (head + tail + 1)) {
+    const headPart = list.slice(0, head);
+    const tailPart = list.slice(-tail);
+    return [...headPart, '…', ...tailPart].join('; ');
+  }
+
+  return list.join('; ');
 }
 
 
@@ -438,7 +451,7 @@ function renderEntry(r){
   if(r.doi){ const doiLink=`https://doi.org/${r.doi}`; line.innerHTML=`<span class="ok">•</span> <a class="link entry-title" href="${doiLink}" target="_blank" rel="noopener">${title}</a>`; }
   else line.innerHTML=`<span class="ok">•</span> <strong class="entry-title">${title}</strong>`;
   const meta=document.createElement('div'); meta.className='meta';
-  meta.innerHTML=`${formatAuthors(r.authors)} · <em>${journal}</em> · ${year}`;
+  meta.innerHTML = `${formatAuthors(r.authors, { truncate: !(r._authorsExpanded === true), head: 3, tail: 3 })} · <em>${journal}</em> · ${year}`;
 
   const controls=document.createElement('div'); controls.className='row';
   const pmidWrap=document.createElement('div'); pmidWrap.className='pmid-wrap';
@@ -454,7 +467,19 @@ function renderEntry(r){
     if(!r._abstractShown){ setStatus('Fetching abstract...'); if(!r._abstract && r.pmid){ r._abstract = await pubmedAbstractByPMID(r.pmid); saveCacheDebounced(); } r._abstractShown=true; setStatus(''); }
     else { r._abstractShown=false; }
     render();
-  });
+  }
+ // Authors toggle (only enabled if there are 7+ authors)
+ const authBtn = document.createElement('button');
+ authBtn.className = 'mini-btn';
+ const hasManyAuthors = Array.isArray(r.authors) && r.authors.length >= 7;
+ authBtn.textContent = r._authorsExpanded ? 'Hide authors' : 'Show authors';
+ if (!hasManyAuthors) authBtn.disabled = true;
+
+ authBtn.addEventListener('click', () => {
+   r._authorsExpanded = !r._authorsExpanded;
+   render();
+ });
+);
 
   // Keywords row
   const kwWrap=document.createElement('div'); kwWrap.className='kw-wrap';
@@ -464,6 +489,7 @@ function renderEntry(r){
 
   controls.appendChild(pmidWrap);
   controls.appendChild(absBtn);
+ controls.appendChild(authBtn);
   e.appendChild(line); e.appendChild(meta); e.appendChild(controls); if((r.keywords||[]).length) e.appendChild(kwWrap); e.appendChild(absContainer);
   return e;
 }
