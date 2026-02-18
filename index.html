@@ -88,6 +88,7 @@ const DATA_CSV = 'new_cleaned_records.csv'; // keep this next to new_index.html
 const CACHE_KEY = 'reflib_v7_keywords_inc';
 const CACHE_VERSION = 1;            // bump to invalidate all cached data
 const CONTACT_EMAIL = 'example@users.noreply';
+const ID_QUEUE_FILE = 'id_queue_pmids.txt';
 
 // Concurrency and rate limiting (be kind to public APIs)
 const MAX_CONCURRENT = 2;        // parallel lookups
@@ -280,7 +281,7 @@ function addOrMerge(rec){
     if(rec.doi) state.index.set(`doi:${rec.doi.toLowerCase()}`, rec);
     if(rec.pmid) state.index.set(`pmid:${rec.pmid}`, rec);
     return true;
-
+  }
 }
   
 
@@ -449,6 +450,43 @@ function saveCacheDebounced(delay = 250) {
   }, delay);
 }
 
+// Load PMIDs from id_queue_pmids.txt and add/enrich them one at a time
+async function loadPmidsQueue() {
+  const res = await fetch(ID_QUEUE_FILE, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Failed to fetch ${ID_QUEUE_FILE}: ${res.status}`);
+
+  const text = await res.text();
+  // Accepts plain PMIDs per line; ignores blank lines & lines starting with '#'
+  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(s => s && !s.startsWith('#'));
+
+  let processed = 0, addedOrUpdated = 0, skipped = 0;
+
+  for (const line of lines) {
+    // Be tolerant: if someone wrote "PMID: 12345678", extract the digits
+    const m = line.match(/\d+/);
+    if (!m) { skipped++; continue; }
+    const pmid = m[0];
+
+    try {
+      // Reuse your existing resolution pipeline (already rate-limited via schedule/pump)
+      const rec = await resolveIdentifier({ type: 'pmid', id: pmid });
+      const changed = addOrMerge(rec);
+      if (changed) {
+        addedOrUpdated++;
+        saveCacheDebounced();   // debounce is already defined in your script
+        render();               // repaint so the user sees each new record land
+      }
+      processed++;
+      setStatus(`Processed ${processed}/${lines.length}… (added/updated: ${addedOrUpdated}, skipped: ${skipped})`);
+    } catch (err) {
+      skipped++;
+      // keep going; show lightweight status
+      setStatus(`Processed ${processed}/${lines.length}… (added/updated: ${addedOrUpdated}, skipped: ${skipped})`);
+    }
+  }
+
+  setStatus(`Done. Processed ${processed}/${lines.length}. Added/updated ${addedOrUpdated}, skipped ${skipped}.`);
+}
 
 // =============================
 //       Resolution Pipeline
@@ -552,19 +590,39 @@ async function loadCSV(){
 
 (async function(){
   wireUI();
-  // 1) Load cache first for an instant enriched view (if available)
-  let hadCache=false;
-  try{
-    const raw=localStorage.getItem(CACHE_KEY);
-    if(raw){ const obj=JSON.parse(raw); const cached=unpackCache(obj); if(cached){ state.records=cached; state.index=new Map(); for(const r of state.records){ if(r.doi) state.index.set(`doi:${String(r.doi).toLowerCase()}`, r); if(r.pmid) state.index.set(`pmid:${r.pmid}`, r); } hadCache=true; render(); setStatus(`Loaded ${state.records.length} record(s) from local cache.`); } }
-  }catch(e){ /* ignore */ }
 
-  // 2) Always load CSV and merge into existing state so new rows appear
-  try{ await loadCSV(); render(); saveCacheDebounced(); }catch(err){ setStatus('Could not load CSV. Make sure new_cleaned_records.csv is in the same folder.'); }
+  // 1) Load cache first for an instant enriched view (if available)
+  let hadCache = false;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const obj = JSON.parse(raw);
+      const cached = unpackCache(obj);
+      if (cached) {
+        state.records = cached;
+        state.index = new Map();
+        for (const r of state.records) {
+          if (r.doi)  state.index.set(`doi:${String(r.doi).toLowerCase()}`, r);
+          if (r.pmid) state.index.set(`pmid:${r.pmid}`, r);
+        }
+        hadCache = true;
+        render();
+        setStatus(`Loaded ${state.records.length} record(s) from local cache.`);
+      }
+    }
+  } catch (e) { /* ignore */ }
+
+  // 2) Load newline-delimited PMIDs and add them one at a time
+  try {
+    await loadPmidsQueue();
+  } catch (err) {
+    setStatus(`Could not load ${ID_QUEUE_FILE}: ${err.message}`);
+  }
 
   // 3) Incremental enrichment – only enrich incomplete records
   await enrichAllIncremental();
 })();
+  
 </script>
 </body>
 </html>
