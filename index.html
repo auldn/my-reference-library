@@ -301,6 +301,13 @@ function formatAuthors(authors){
   }).join('; ');
 }
 
+
+function journalLabelOf(r){
+  const j = (r.journal || '').trim();
+  return j.length ? j : 'Unknown Journal';
+}
+
+
 function bucketForYear(y){ const n=parseInt(y,10); if(!n) return 'Unknown Year'; const end = n + (5 - (n % 5 || 5)); const start=end-4; return `${start}-${end}`; }
 
 function compareBy(sortKey){
@@ -336,41 +343,89 @@ function filteredAndSorted(){
 
 function render(){
   document.getElementById('queueIndicator').textContent = `Queue: ${state.queueSize}`;
-  const container=document.getElementById('groups');
-  container.innerHTML='';
-  const list=filteredAndSorted();
-  const groupByYear = (state.sort==='year_desc' || state.sort==='year_asc');
-  if(groupByYear){
-    const buckets=new Map();
-    for(const r of list){ const b=bucketForYear(r.year); if(!buckets.has(b)) buckets.set(b,[]); buckets.get(b).push(r); }
-    const order=Array.from(buckets.keys()).sort((a,b)=>{
+  const container = document.getElementById('groups');
+  container.innerHTML = '';
+
+  const list = filteredAndSorted();
+
+  // Decide grouping strategy
+  const groupByYear    = (state.sort === 'year_desc' || state.sort === 'year_asc');
+  const groupByJournal = (state.sort === 'journal_az'); // NEW: group when Journal A–Z is active
+
+  if (groupByYear) {
+    // ----- existing year grouping -----
+    const buckets = new Map();
+    for (const r of list){
+      const b = bucketForYear(r.year);
+      if (!buckets.has(b)) buckets.set(b, []);
+      buckets.get(b).push(r);
+    }
+    const order = Array.from(buckets.keys()).sort((a,b)=>{
       const ea = a==='Unknown Year'? -Infinity : parseInt(a.split('-')[1],10);
       const eb = b==='Unknown Year'? -Infinity : parseInt(b.split('-')[1],10);
       return (state.sort==='year_desc') ? (eb-ea) : (ea-eb);
     });
-    for(const label of order){
-      const grp=document.createElement('div'); grp.className='group';
-      const header=document.createElement('div'); header.className='group-header';
-      const h3=document.createElement('h3'); h3.textContent=label;
-      const count=document.createElement('div'); count.className='group-count';
-      const arr=buckets.get(label);
-      count.textContent=`${arr.length} entr${arr.length===1?'y':'ies'}`;
+    for (const label of order){
+      const grp = document.createElement('div'); grp.className='group';
+      const header = document.createElement('div'); header.className='group-header';
+      const h3 = document.createElement('h3'); h3.textContent = label;
+      const count = document.createElement('div'); count.className='group-count';
+      const arr = buckets.get(label);
+      count.textContent = `${arr.length} entr${arr.length===1?'y':'ies'}`;
       header.appendChild(h3); header.appendChild(count);
-      const entries=document.createElement('div'); entries.className='entries';
+      const entries = document.createElement('div'); entries.className='entries';
       header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
-      for(const r of arr) entries.appendChild(renderEntry(r));
+      for (const r of arr) entries.appendChild(renderEntry(r));
       grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
     }
+
+  } else if (groupByJournal) {
+    // ----- NEW: group by journal for Journal A–Z sort -----
+    const buckets = new Map();
+    for (const r of list){
+      const label = journalLabelOf(r);
+      if (!buckets.has(label)) buckets.set(label, []);
+      buckets.get(label).push(r);
+    }
+
+    // Sort journal labels A–Z; keep "Unknown Journal" at the end
+    const coll = new Intl.Collator('en', { sensitivity: 'base' });
+    const labels = Array.from(buckets.keys());
+    labels.sort((a, b) => {
+      const ua = (a === 'Unknown Journal'), ub = (b === 'Unknown Journal');
+      if (ua && ub) return 0;
+      if (ua) return 1;            // push Unknown to bottom
+      if (ub) return -1;
+      return coll.compare(a, b);
+    });
+
+    for (const label of labels){
+      const grp = document.createElement('div'); grp.className='group';
+      const header = document.createElement('div'); header.className='group-header';
+      const h3 = document.createElement('h3'); h3.textContent = label;
+      const count = document.createElement('div'); count.className='group-count';
+      const arr = buckets.get(label);
+      // Secondary sort: Year descending (newest first)
+      arr.sort((a,b)=>(parseInt(b.year,10)||0) - (parseInt(a.year,10)||0));
+      count.textContent = `${arr.length} entr${arr.length===1?'y':'ies'}`;
+      header.appendChild(h3); header.appendChild(count);
+      const entries = document.createElement('div'); entries.className='entries';
+      header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
+      for (const r of arr) entries.appendChild(renderEntry(r));
+      grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
+    }
+
   } else {
-    const grp=document.createElement('div'); grp.className='group';
-    const header=document.createElement('div'); header.className='group-header';
-    const h3=document.createElement('h3'); h3.textContent='All entries';
-    const count=document.createElement('div'); count.className='group-count';
-    count.textContent=`${list.length} entr${list.length===1?'y':'ies'}`;
+    // ----- existing flat "All entries" -----
+    const grp = document.createElement('div'); grp.className='group';
+    const header = document.createElement('div'); header.className='group-header';
+    const h3 = document.createElement('h3'); h3.textContent = 'All entries';
+    const count = document.createElement('div'); count.className='group-count';
+    count.textContent = `${list.length} entr${list.length===1?'y':'ies'}`;
     header.appendChild(h3); header.appendChild(count);
-    const entries=document.createElement('div'); entries.className='entries';
+    const entries = document.createElement('div'); entries.className='entries';
     header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
-    for(const r of list) entries.appendChild(renderEntry(r));
+    for (const r of list) entries.appendChild(renderEntry(r));
     grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
   }
 }
