@@ -605,20 +605,52 @@ if (dlBtn) dlBtn.addEventListener('click', downloadAllPmids);
 //           Boot
 // =============================
 function wireUI(){
-  const searchEl=document.getElementById('search');
-  const sortEl=document.getElementById('sort');
-  const resetEl=document.getElementById('reset');
-  const addBtn=document.getElementById('addId');
-  const idInput=document.getElementById('idInput');
-  searchEl.addEventListener('input', e=>{ state.query=e.target.value; saveCacheDebounced(); render(); });
-  sortEl.addEventListener('change', e=>{ state.sort=e.target.value; saveCacheDebounced(); render(); });
-  resetEl.addEventListener('click', ()=>{ state.query=''; searchEl.value=''; state.sort='year_desc'; sortEl.value='year_desc'; saveCacheDebounced(); render(); });
-  const onlinePill=document.getElementById('netIndicator');
-  function updateNet(){ onlinePill.textContent = navigator.onLine? 'Online':'Offline'; onlinePill.style.color = navigator.onLine? '#a7f3d0':'#fecaca'; }
-  window.addEventListener('online', updateNet); window.addEventListener('offline', updateNet); updateNet();
+  // Core controls
+  const searchEl = document.getElementById('search');
+  const sortEl   = document.getElementById('sort');
+  const resetEl  = document.getElementById('reset');
+  const addBtn   = document.getElementById('addId');
+  const idInput  = document.getElementById('idInput');
+
+  // Search, sort, reset
+  searchEl.addEventListener('input', e=>{
+    state.query = e.target.value;
+    saveCacheDebounced();
+    render();
+  });
+  sortEl.addEventListener('change', e=>{
+    state.sort = e.target.value;
+    saveCacheDebounced();
+    render();
+  });
+  resetEl.addEventListener('click', ()=>{
+    state.query = '';
+    searchEl.value = '';
+    state.sort = 'year_desc';
+    sortEl.value = 'year_desc';
+    saveCacheDebounced();
+    render();
+  });
+
+  // Online/offline indicator
+  const onlinePill = document.getElementById('netIndicator');
+  function updateNet(){
+    onlinePill.textContent = navigator.onLine ? 'Online' : 'Offline';
+    onlinePill.style.color = navigator.onLine ? '#a7f3d0' : '#fecaca';
+  }
+  window.addEventListener('online',  updateNet);
+  window.addEventListener('offline', updateNet);
+  updateNet();
+
+  // Add-by-ID interactions
   addBtn.addEventListener('click', addById);
-  idInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addById(); });
+  idInput.addEventListener('keydown', e=>{ if (e.key === 'Enter') addById(); });
+
+  // Optional: hook up "Download PMIDs" button if present
+  const dlBtn = document.getElementById('downloadPmids');
+  if (dlBtn) dlBtn.addEventListener('click', downloadAllPmids);
 }
+
 
 function classifyId(input){ const v=String(input||'').trim(); if(/^\d+$/.test(v)) return {type:'pmid', id:v}; if(/^10\./.test(v)||/^doi:/i.test(v)||/^https?:\/\/doi\.org\//i.test(v)) return {type:'doi', id:normalizeDOI(v)}; return null; }
 
