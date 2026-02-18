@@ -2,657 +2,557 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>My Reference Library</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Reference Library</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Arima:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #0f1218;
-      --card: #151a22;
-      --text: #e8eef7;
-      --muted: #a9b3c2;
-      --accent: #3aa0ff;
-      --accent-2: #00c2a8;
-      --border: #263041;
-      --pill-bg: #1d2430;
-      --warn: #f6c34a;
-      --danger: #ff6b6b;
-      --ok: #57d38c;
-      --link: #8acbff;
-      --shadow: 0 6px 20px rgba(0,0,0,.35);
-      --radius: 10px;
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color: var(--text);
-      background: linear-gradient(180deg, #0e1117, #0f1218 120px);
-    }
-    .wrap {
-      max-width: 1080px;
-      margin: 24px auto 64px;
-      padding: 0 16px;
-    }
-    h1 { font-weight: 700; letter-spacing: .2px; margin: 0 0 16px; }
-    .controls {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    .control-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-    }
-    .control-card h2 {
-      margin: 0 0 8px;
-      font-size: 18px;
-    }
-    label { display:block; margin: 8px 0 4px; color: var(--muted); }
-    input[type="text"], select {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: #0f1218;
-      color: var(--text);
-      outline: none;
-    }
-    input[type="text"]::placeholder { color: #7d8898; }
-    button {
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: #1c2532;
-      color: var(--text);
-      cursor: pointer;
-    }
-    button:hover { border-color: #35527c; background: #1a2a40; }
-    .btn-outline-secondary {
-      background: transparent;
-      border-color: var(--border);
-    }
-    .row {
-      display: flex; gap: 8px; align-items: center;
-    }
-    .status { color: var(--muted); font-size: 13px; min-height: 18px; }
-    .pill {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: var(--pill-bg);
-      color: var(--muted);
-      font-size: 12px;
-      border: 1px solid var(--border);
-      margin-right: 6px;
-    }
-
-    /* Results */
-    #groups { margin-top: 18px; }
-    .year-group { margin-top: 18px; }
-    .year-heading {
-      font-size: 16px; font-weight: 600; margin: 0 0 8px; color: #cdd6e3;
-      border-bottom: 1px dashed var(--border); padding-bottom: 4px;
-    }
-    .ref {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      padding: 12px 10px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: #0f131b;
-      margin-bottom: 8px;
-    }
-    .ref .meta { color: var(--muted); font-size: 13px; }
-    .ref .title { font-weight: 600; }
-    .ref .right { text-align: right; color: var(--muted); font-size: 12px; }
-    .muted { color: var(--muted); }
-    a { color: var(--link); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .empty {
-      color: var(--muted);
-      padding: 18px;
-      border: 1px dashed var(--border);
-      border-radius: 12px;
-      text-align: center;
-      background: #0f131b;
-    }
-
-    /* Responsive fix for long authors/journals */
-    .ref .title, .ref .meta { overflow-wrap: anywhere; }
+    :root{ --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee; --border:#1f2937; --ok:#34d399; --warn:#fbbf24; --err:#f87171; }
+    html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";}
+    h1{font-family:'Playfair Display', serif;font-size:1.92rem;margin:.5rem 0 1rem 0}
+    .wrap{max-width:1100px;margin:0 auto;padding:1rem}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+    .control-card{background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1rem}
+    .control-card h2{font-size:1.05rem;margin:0 0 .5rem 0}
+    label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.25rem}
+    input[type="text"], select{width:100%;padding:.5rem .6rem;border-radius:.5rem;border:1px solid var(--border);background:#0b1020;color:var(--text)}
+    button{appearance:none;background:linear-gradient(90deg,#0891b2,#22d3ee);color:#082f49;border:none;border-radius:.6rem;padding:.5rem .8rem;font-weight:600;cursor:pointer}
+    .status{font-size:.9rem;color:var(--muted);margin-top:.5rem;white-space:pre-line}
+    .group{margin:1rem 0;border:1px solid var(--border);border-radius:.75rem;overflow:hidden}
+    .group-header{display:flex;justify-content:space-between;align-items:center;background:#0b1020;padding:.6rem .8rem;cursor:pointer}
+    .group-header h3{margin:0;font-size:1rem}
+    .group-count{font-size:.85rem;color:var(--muted)}
+    .entries{padding:.5rem .8rem}
+    .entry{border-top:1px dashed var(--border);padding:.6rem 0;line-height:1.45;font-size:0.96em}
+    .entry:first-child{border-top:none}
+    .entry-title{font-family:'Arima', system-ui; font-weight:700; font-size:1.2em}
+    .meta{color:var(--muted)}
+    .hidden{display:none}
+    .row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+    code{background:#0b1020;padding:.15rem .4rem;border-radius:.3rem;border:1px solid var(--border)}
+    .link{color:var(--accent);text-decoration:none}
+    .link:hover{text-decoration:underline}
+    .mini-btn{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:.5rem;padding:.2rem .45rem;font-size:.85em;cursor:pointer}
+    .abstract{margin-top:.4rem;color:#cbd5e1;white-space:pre-wrap}
+    .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:.1rem .5rem;font-size:.8em;color:#a5b4fc;background:#0b1020}
+    .kw{display:inline-block;border:1px solid #334155;background:#0b1020;color:#93c5fd;border-radius:999px;padding:.05rem .5rem;margin:.15rem .25rem 0 0;font-size:.78em}
+    .kw-wrap{margin-top:.4rem}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>My Reference Library</h1>
+<div class="wrap">
+  <h1>My Reference Library</h1>
 
-    <div class="controls">
-      <div class="control-card">
-        <h2>Search &amp; Sort</h2>
-        <label for="search">Search</label>
-        <input id="search" type="text" placeholder="title, author, journal, year, DOI, PMID, keywords"/>
-        <div style="height:.6rem"></div>
-        <label for="sort">Sort</label>
-        <select id="sort">
-          <option value="year_desc">Year ↓</option>
-          <option value="year_asc">Year ↑</option>
-          <option value="title_az">Title A–Z</option>
-          <option value="title_za">Title Z–A</option>
-          <option value="journal_az">Journal A–Z</option>
-          <option value="author_az">First author A–Z</option>
-        </select>
-        <div style="height:.6rem"></div>
-        <button id="reset">Reset</button>
-        <div id="status" class="status"></div>
-      </div>
-
-      <div class="control-card">
-        <h2>Add by ID</h2>
-        <label for="idInput">Paste a DOI or PMID</label>
-        <div class="row">
-          <input id="idInput" type="text" placeholder="10.xxxx/… or 12345678" style="flex:1"/>
-          <button id="addId">Add</button>
-        </div>
-        <div class="status" style="margin-top:.5rem">
-          Adds immediately; fetches metadata in background.
-        </div>
-        <div style="margin-top:.5rem">
-          <span class="pill" id="netIndicator">Online</span>
-          <span class="pill" id="queueIndicator">Queue: 0</span>
-
-          <!-- Download CSV button -->
-          <button id="btn-download-csv" type="button" class="btn btn-outline-secondary" style="margin-top:8px;">
-            Download CSV
-          </button>
-        </div>
-      </div>
+  <div class="controls">
+    <div class="control-card">
+      <h2>Search & Sort</h2>
+      <label for="search">Search</label>
+      <input id="search" type="text" placeholder="title, author, journal, year, DOI, PMID, keywords"/>
+      <div style="height:.6rem"></div>
+      <label for="sort">Sort</label>
+      <select id="sort">
+        <option value="year_desc">Year ↓</option>
+        <option value="year_asc">Year ↑</option>
+        <option value="title_az">Title A–Z</option>
+        <option value="title_za">Title Z–A</option>
+        <option value="journal_az">Journal A–Z</option>
+        <option value="author_az">First author A–Z</option>
+      </select>
+      <div style="height:.6rem"></div>
+      <button id="reset">Reset</button>
+      <div id="status" class="status"></div>
     </div>
 
-    <div id="groups"></div>
+    <div class="control-card">
+      <h2>Add by ID</h2>
+      <label for="idInput">Paste a DOI or PMID</label>
+      <div class="row">
+        <input id="idInput" type="text" placeholder="10.xxxx/… or 12345678" style="flex:1"/>
+        <button id="addId">Add</button>
+      </div>
+      <div class="status" style="margin-top:.5rem">Adds immediately; fetches metadata in background.</div>
+      <div style="margin-top:.5rem">
+        <span class="pill" id="netIndicator">Online</span>
+        <span class="pill" id="queueIndicator">Queue: 0</span>
+      </div>
+    </div>
   </div>
 
-  <script>
-    /******************************************************************
-     * Reference Library – Client-side app (GitHub Pages friendly)
-     * Storage: localStorage (STORAGE_KEY)
-     * Exports: CSV (UTF‑8)
-     * Add by ID: DOI (Crossref → DataCite fallback) and PMID (NCBI)
-     ******************************************************************/
-    const STORAGE_KEY = 'reflib_items_v1';
-    const CSV_HEADERS = ['title','authors','journal','year','pmid','doi','url'];
+  <div id="groups"></div>
+</div>
 
-    const state = {
-      references: [],   // Array of objects: {id,title,authors,journal,year,pmid,doi,url,addedAt}
-      search: '',
-      sort: 'year_desc',
-      queue: [],        // background fetch tasks
-      online: navigator.onLine
-    };
+<script>
+// =============================
+//   Configuration & Constants
+// =============================
+const DATA_CSV = 'new_cleaned_records.csv'; // keep this next to new_index.html
+const CACHE_KEY = 'reflib_v7_keywords_inc';
+const CACHE_VERSION = 1;            // bump to invalidate all cached data
+const CONTACT_EMAIL = 'example@users.noreply';
 
-    // =============== Utilities ===============
-    const $ = (sel, root=document) => root.querySelector(sel);
-    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
-    const nowISO = () => new Date().toISOString();
+// Concurrency and rate limiting (be kind to public APIs)
+const MAX_CONCURRENT = 2;        // parallel lookups
+const MIN_DELAY_MS = 400;        // ~2.5 req/s aggregate
 
-    function load() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : (arr.items || []);
-      } catch(e) {
-        console.warn('Failed to load storage', e);
-        return [];
-      }
+// =============================
+//         CSV Utilities
+// =============================
+function csvToRows(text){
+  const rows=[]; let i=0, field='', row=[], q=false;
+  const pushField=()=>{ row.push(field); field=''; };
+  const pushRow=()=>{ rows.push(row); row=[]; };
+  while(i<text.length){
+    const c=text[i++];
+    if(q){
+      if(c==='"'){
+        if(text[i]==='"'){ field+='"'; i++; } else { q=false; }
+      } else field+=c;
+    } else {
+      if(c==='"') q=true;
+      else if(c===',') pushField();
+      else if(c==='\n'){ pushField(); pushRow(); }
+      else if(c==='\r'){ /* ignore */ }
+      else field+=c;
     }
-    function save() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.references));
-      } catch(e) {
-        console.warn('Failed to save storage', e);
-      }
-    }
-
-    function setStatus(msg, type='info', ms=3000) {
-      const el = $('#status');
-      if (!el) return;
-      el.textContent = msg || '';
-      if (ms) setTimeout(() => { if (el.textContent === msg) el.textContent=''; }, ms);
-    }
-
-    function updateNetIndicator() {
-      state.online = navigator.onLine;
-      const el = $('#netIndicator');
-      if (el) {
-        el.textContent = state.online ? 'Online' : 'Offline';
-        el.style.color = state.online ? 'var(--ok)' : 'var(--danger)';
-        el.style.borderColor = state.online ? 'rgba(87,211,140,.4)' : 'rgba(255,107,107,.4)';
-      }
-    }
-    function updateQueueIndicator() {
-      const el = $('#queueIndicator');
-      if (el) el.textContent = `Queue: ${state.queue.length}`;
-    }
-
-    // =============== Render ===============
-    function normalizeReference(ref) {
-      // Ensure consistent keys and types
-      return {
-        id: ref.id ?? cryptoRandomId(),
-        title: ref.title ?? '',
-        authors: (typeof ref.authors === 'string')
-                  ? ref.authors
-                  : (Array.isArray(ref.authors) ? ref.authors.join('; ') : ''),
-        journal: ref.journal ?? '',
-        year: String(ref.year ?? '').trim(),
-        pmid: String(ref.pmid ?? '').trim(),
-        doi: (ref.doi ?? '').trim(),
-        url: ref.url ?? '',
-        addedAt: ref.addedAt ?? nowISO()
-      };
-    }
-
-    function cryptoRandomId() {
-      // Simple unique id for this page (not cryptographic UID across sessions, but stable enough)
-      try {
-        const b = new Uint8Array(8);
-        crypto.getRandomValues(b);
-        return [...b].map(x => x.toString(16).padStart(2,'0')).join('');
-      } catch { return String(Date.now()) + '_' + Math.random().toString(36).slice(2); }
-    }
-
-    function filteredAndSorted(list) {
-      const q = state.search.trim().toLowerCase();
-      let arr = list;
-
-      if (q) {
-        arr = arr.filter(r => {
-          const hay = [
-            r.title, r.authors, r.journal, r.year, r.pmid, r.doi
-          ].join(' ').toLowerCase();
-          return hay.includes(q);
-        });
-      }
-
-      switch (state.sort) {
-        case 'year_desc':
-          arr.sort((a,b) => (parseInt(b.year) || -Infinity) - (parseInt(a.year) || -Infinity)); break;
-        case 'year_asc':
-          arr.sort((a,b) => (parseInt(a.year) || Infinity) - (parseInt(b.year) || Infinity)); break;
-        case 'title_az':
-          arr.sort((a,b) => (a.title || '').localeCompare(b.title || '', undefined, {sensitivity:'base'})); break;
-        case 'title_za':
-          arr.sort((a,b) => (b.title || '').localeCompare(a.title || '', undefined, {sensitivity:'base'})); break;
-        case 'journal_az':
-          arr.sort((a,b) => (a.journal || '').localeCompare(b.journal || '', undefined, {sensitivity:'base'})); break;
-        case 'author_az':
-          // Use first author (before ';')
-          const first = s => (s || '').split(';')[0].trim();
-          arr.sort((a,b) => first(a.authors).localeCompare(first(b.authors), undefined, {sensitivity:'base'})); break;
-      }
-      return arr;
-    }
-
-    function groupByYear(arr) {
-      const map = new Map();
-      for (const r of arr) {
-        const y = (r.year && /^\d{4}/.test(r.year)) ? r.year : 'No year';
-        if (!map.has(y)) map.set(y, []);
-        map.get(y).push(r);
-      }
-      // Present newest year first by default when grouped
-      const entries = Array.from(map.entries())
-        .sort((a,b) => (parseInt(b[0])||-Infinity) - (parseInt(a[0])||-Infinity));
-      return entries;
-    }
-
-    function render() {
-      const root = $('#groups');
-      root.innerHTML = '';
-      const items = filteredAndSorted(state.references.map(normalizeReference));
-
-      if (items.length === 0) {
-        root.innerHTML = `<div class="empty">No references yet. Add a DOI or PMID to get started.</div>`;
-        return;
-      }
-
-      // Group by year for a nice visual
-      const groups = groupByYear(items);
-      for (const [year, refs] of groups) {
-        const sec = document.createElement('section');
-        sec.className = 'year-group';
-
-        const h = document.createElement('h3');
-        h.className = 'year-heading';
-        h.textContent = year;
-        sec.appendChild(h);
-
-        for (const r of refs) {
-          const item = document.createElement('div');
-          item.className = 'ref';
-
-          const left = document.createElement('div');
-          const title = document.createElement('div');
-          title.className = 'title';
-          title.textContent = r.title || (r.doi || r.pmid || '(untitled)');
-
-          const meta = document.createElement('div');
-          meta.className = 'meta';
-          const bits = [];
-          if (r.authors) bits.push(r.authors);
-          if (r.journal) bits.push(r.journal);
-          const tail = [];
-          if (r.doi) tail.push(`DOI: ${r.doi}`);
-          if (r.pmid) tail.push(`PMID: ${r.pmid}`);
-          if (tail.length) bits.push(tail.join(' • '));
-          meta.textContent = bits.join(' — ');
-
-          left.appendChild(title);
-          left.appendChild(meta);
-
-          const right = document.createElement('div');
-          right.className = 'right';
-          if (r.url) {
-            const link = document.createElement('a');
-            link.href = r.url;
-            link.target = '_blank';
-            link.rel = 'noopener';
-            link.textContent = 'Link';
-            right.appendChild(link);
-          }
-
-          item.appendChild(left);
-          item.appendChild(right);
-          sec.appendChild(item);
-        }
-
-        root.appendChild(sec);
-      }
-    }
-
-    // =============== CSV Export ===============
-    function escCSV(val) {
-      const s = String(val ?? '');
-      const needs = /[",\n\r]/.test(s);
-      const out = s.replace(/"/g, '""');
-      return needs ? `"${out}"` : out;
-    }
-    function toCSV(rows) {
-      const header = CSV_HEADERS.map(escCSV).join(',');
-      const body = rows.map(r => {
-        const n = normalizeReference(r);
-        return CSV_HEADERS.map(h => escCSV(n[h])).join(',');
-      }).join('\r\n');
-      return header + '\r\n' + body;
-    }
-    function downloadCSV() {
-      const refs = state.references;
-      if (!refs || refs.length === 0) {
-        alert('Your library is empty—no references to export.');
-        return;
-      }
-      const csv = toCSV(refs);
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const t = new Date(), y = t.getFullYear(), m = String(t.getMonth()+1).padStart(2,'0'), d = String(t.getDate()).padStart(2,'0');
-      const a = document.createElement('a');
-      a.href = url; a.download = `references_${y}-${m}-${d}.csv`; a.style.display='none';
-      document.body.appendChild(a); a.click();
-      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
-    }
-
-    // =============== Add by ID ===============
-    const DOI_PATTERN = /^10\.\d{4,9}\/[-._;()/:A-Z0-9]+$/i;
-    function extractDOI(input) {
-      const s = String(input).trim();
-      // Accept raw DOI or prefixed URLs
-      const doiFromUrl = s.match(/10\.\d{4,9}\/[-._;()/:A-Z0-9]+/i);
-      if (doiFromUrl) return doiFromUrl[0];
-      return DOI_PATTERN.test(s) ? s : '';
-    }
-    function isPMID(input) {
-      return /^\d{1,9}$/.test(String(input).trim()); // simple check
-    }
-
-    function addMinimalRecordFromId(idStr) {
-      const id = idStr.trim();
-      const rec = normalizeReference({
-        id: cryptoRandomId(),
-        title: '',
-        authors: '',
-        journal: '',
-        year: '',
-        pmid: isPMID(id) ? id : '',
-        doi: extractDOI(id) || '',
-        url: '',
-        addedAt: nowISO()
-      });
-      state.references.unshift(rec);
-      save();
-      render();
-      return rec;
-    }
-
-    // ---- Metadata fetchers ----
-    const politeEmail = 'YOUR_EMAIL@example.org'; // TODO: replace with your email
-
-    async function fetchCrossref(doi) {
-      const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}?mailto=${encodeURIComponent(politeEmail)}`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (!res.ok) { return { ok: false, status: res.status }; }
-      const data = await res.json();
-      const m = data && data.message;
-      if (!m) return { ok:false, status: 502 };
-      const authors = (m.author || []).map(a => [a.given, a.family].filter(Boolean).join(' ')).filter(Boolean).join('; ');
-      const year = (m.issued && m.issued['date-parts'] && m.issued['date-parts'][0] && m.issued['date-parts'][0][0]) || '';
-      return {
-        ok: true,
-        rec: {
-          title: (m.title && m.title[0]) || '',
-          authors,
-          journal: (m['container-title'] && m['container-title'][0]) || '',
-          year: String(year || ''),
-          pmid: '',
-          doi: m.DOI || doi,
-          url: m.URL || (`https://doi.org/${doi}`)
-        }
-      };
-    }
-
-    async function fetchDataCite(doi) {
-      const url = `https://api.datacite.org/works/${encodeURIComponent(doi)}`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (!res.ok) { return { ok: false, status: res.status }; }
-      const data = await res.json();
-      const a = data && data.data && data.data.attributes;
-      if (!a) return { ok:false, status: 502 };
-      const authors = (a.creators || []).map(c => c.name || [c.givenName, c.familyName].filter(Boolean).join(' ')).filter(Boolean).join('; ');
-      return {
-        ok: true,
-        rec: {
-          title: (a.titles && a.titles[0] && a.titles[0].title) || '',
-          authors,
-          journal: (a.container && a.container.title) || (a.publisher || ''),
-          year: String(a.publicationYear || ''),
-          pmid: '',
-          doi: a.doi || doi,
-          url: a.url || (`https://doi.org/${doi}`)
-        }
-      };
-    }
-
-    async function fetchPMID(pmid) {
-      // NCBI E-utilities (ESummary)
-      const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=json`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (!res.ok) { return { ok:false, status: res.status }; }
-      const data = await res.json();
-      const rec = data && data.result && data.result[pmid];
-      if (!rec) return { ok:false, status: 404 };
-      const authors = (rec.authors || []).map(a => a.name).filter(Boolean).join('; ');
-      // year from pubdate ("2024 Jan 12")
-      const year = (rec.pubdate || '').match(/\d{4}/)?.[0] || '';
-      // Prefer PubMed URL, fallback to DOI if present
-      const doi = (rec.elocationid || '').toLowerCase().startsWith('doi ')
-        ? (rec.elocationid.split(' ')[1] || '') : (rec.articleids || []).find(x => x.idtype==='doi')?.value || '';
-      const urlPM = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
-      return {
-        ok: true,
-        rec: {
-          title: rec.title || '',
-          authors,
-          journal: rec.fulljournalname || rec.source || '',
-          year: String(year || ''),
-          pmid: String(pmid),
-          doi: doi,
-          url: urlPM
-        }
-      };
-    }
-
-    async function enrichRecord(rec) {
-      // Returns updated record (partial merge)
-      if (rec.doi) {
-        // Crossref → DataCite fallback
-        const cr = await fetchCrossref(rec.doi).catch(() => ({ok:false}));
-        if (cr && cr.ok) return cr.rec;
-        if (cr && cr.status === 404) {
-          const dc = await fetchDataCite(rec.doi).catch(() => ({ok:false}));
-          if (dc && dc.ok) return dc.rec;
-        }
-      }
-      if (rec.pmid) {
-        const pm = await fetchPMID(rec.pmid).catch(() => ({ok:false}));
-        if (pm && pm.ok) return pm.rec;
-      }
-      return null;
-    }
-
-    function mergeInto(target, patch) {
-      // Only fill blanks or missing fields to respect "add immediately" then enhance
-      const keys = ['title','authors','journal','year','pmid','doi','url'];
-      for (const k of keys) {
-        const oldVal = target[k];
-        const newVal = patch[k];
-        if (!oldVal && newVal) target[k] = newVal;
-      }
-      return target;
-    }
-
-    // =============== Background queue ===============
-    async function processQueue() {
-      updateQueueIndicator();
-      if (state._processing) return;
-      state._processing = true;
-
-      while (state.queue.length) {
-        const job = state.queue.shift();
-        updateQueueIndicator();
-        try {
-          const patch = await enrichRecord(job.ref);
-          if (patch) {
-            // find and merge
-            const idx = state.references.findIndex(r => r.id === job.ref.id);
-            if (idx >= 0) {
-              state.references[idx] = mergeInto(state.references[idx], patch);
-              save(); render();
-            }
-          }
-        } catch (e) {
-          console.warn('Enrichment failed:', e);
-        }
-        // small delay to be kind to APIs
-        await sleep(150);
-      }
-      state._processing = false;
-      updateQueueIndicator();
-    }
-
-    // =============== Event wiring ===============
-    function debounce(fn, ms) {
-      let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      // Load existing
-      state.references = load().map(normalizeReference);
-
-      // Indicators
-      updateNetIndicator();
-      window.addEventListener('online', updateNetIndicator);
-      window.addEventListener('offline', updateNetIndicator);
-
-      // Search
-      $('#search').addEventListener('input', debounce((e) => {
-        state.search = e.target.value || '';
-        render();
-      }, 120));
-
-      // Sort
-      $('#sort').addEventListener('change', (e) => {
-        state.sort = e.target.value;
-        render();
-      });
-
-      // Reset
-      $('#reset').addEventListener('click', () => {
-        state.search = '';
-        state.sort = 'year_desc';
-        $('#search').value = '';
-        $('#sort').value = 'year_desc';
-        render();
-      });
-
-      // Add by ID
-      $('#addId').addEventListener('click', async () => {
-        const input = $('#idInput').value.trim();
-        if (!input) { setStatus('Please paste a DOI (10.xxxx/...) or a PMID (digits).', 'warn'); return; }
-
-        const doi = extractDOI(input);
-        const pmid = isPMID(input) ? input : '';
-
-        if (!doi && !pmid) {
-          setStatus('That does not look like a DOI or a PMID. Check and try again.', 'warn');
-          return;
-        }
-
-        // 1) Add minimal record immediately
-        const rec = addMinimalRecordFromId(input);
-        setStatus('Added. Fetching metadata in background...');
-        $('#idInput').value = '';
-
-        // 2) Queue enrichment
-        state.queue.push({ type: doi ? 'doi' : 'pmid', ref: rec });
-        processQueue();
-      });
-
-      // CSV
-      $('#btn-download-csv').addEventListener('click', downloadCSV);
-
-      // Initial render
-      render();
-
-      // (Optional) Example: seed two refs if library is empty (commented)
-      /*
-      if (state.references.length === 0) {
-        state.references = [
-          { title: "Why don’t all adults get multiple sclerosis?",
-            authors: "Hawkes, CH; Giovannoni, G; Lechner-Scott, J; Levy, M; Yeh, A",
-            journal: "Multiple Sclerosis and Related Disorders", year: "2026", pmid: "41571370", doi: "", url: "" },
-          { title: "Virus antibody responses in patients with myelin oligodendrocyte glycoprotein antibody-associated disease and multiple sclerosis",
-            authors: "Frederiksen, J; Žiogienė, D; Slibinskas, R; Ciplys, E; Houen, G; Trier, N",
-            journal: "Multiple Sclerosis and Related Disorders", year: "2026", pmid: "41576644", doi: "", url: "" }
-        ].map(normalizeReference);
-        save(); render();
-      }
-      */
+  }
+  if(field.length>0 || row.length>0){ pushField(); pushRow(); }
+  if(rows.length && rows[rows.length-1].every(v=>v==='')) rows.pop();
+  return rows;
+}
+function rowsToObjects(rows){
+  if(!rows||!rows.length) return [];
+  const header = rows[0].map(h=>String(h||'').trim().toLowerCase());
+  const idx = Object.fromEntries(header.map((h,i)=>[h,i]));
+  const get=(r,k)=>{ const i=idx[k]; return i==null?'':String(r[i]||'').trim(); };
+  const out=[];
+  for(let k=1;k<rows.length;k++){
+    const r=rows[k]; if(!r||r.every(v=>String(v||'').trim()==='')) continue;
+    out.push({
+      title:  get(r,'title'),
+      authors:get(r,'authors'),
+      journal:get(r,'journal'),
+      year:   get(r,'year'),
+      pmid:   get(r,'pmid')
     });
-  </script>
+  }
+  return out;
+}
+
+// =============================
+//     Normalization Helpers
+// =============================
+function normalizeDOI(raw){ if(!raw) return null; let s=String(raw).trim(); s=s.replace(/^https?:\/\/doi\.org\//i,''); s=s.replace(/^doi:\s*/i,''); s=s.replace(/[\s<>\[\]()\u200B]+$/g,''); return s||null; }
+function normalizePMID(raw){ if(!raw) return null; const m=String(raw).trim().match(/\d+/); return m?m[0]:null; }
+function stripHtml(s){ return String(s||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); }
+
+// Title similarity helpers
+function normalizeTitle(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim(); }
+function titleWordSet(t){ return new Set(normalizeTitle(t).split(' ').filter(w=>w.length>2)); }
+function jaccard(a,b){ const ia=new Set(); for(const x of a){ if(b.has(x)) ia.add(x); } return ia.size/Math.max(1,(new Set([...a,...b])).size); }
+function scoreTitleMatch(t1,t2){ return jaccard(titleWordSet(t1), titleWordSet(t2)); }
+
+// =============================
+//         API Clients
+// =============================
+async function crossrefByDOI(doi){
+  const url = `https://api.crossref.org/works/${encodeURIComponent(doi)}?mailto=${encodeURIComponent(CONTACT_EMAIL)}`;
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(`CrossRef ${res.status}`);
+    const json = await res.json();
+    const it = json?.message;
+    const title = Array.isArray(it?.title) ? it.title[0] : it?.title || null;
+    const journal = Array.isArray(it?.['container-title']) ? it['container-title'][0] : it?.['container-title'] || it?.shortContainerTitle || null;
+    const dateParts = it?.issued?.['date-parts']?.[0] || it?.created?.['date-parts']?.[0] || [];
+    const year = dateParts[0] || (it?.created?.['date-time'] ? new Date(it.created['date-time']).getFullYear() : null);
+    const authors = Array.isArray(it?.author) ? it.author.map(a=>({family:a.family, given:a.given})) : [];
+    const abstract = it?.abstract ? stripHtml(it.abstract) : null;
+    return { title, journal, year, authors, doi, pmid:null, keywords:[], sources:['CrossRef'], raw:{crossref:it}, _abstract:abstract };
+  }catch(err){ return { title:null, journal:null, year:null, authors:[], doi, pmid:null, keywords:[], sources:['CrossRef(error)'], _abstract:null, _error:String(err) }; }
+}
+
+async function pubmedSummaryByPMID(pmid){
+  const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=json`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`PubMed esummary ${res.status}`);
+  const json = await res.json();
+  const s = json?.result?.[pmid];
+  if(!s) throw new Error('No esummary result');
+  const title = s?.title || null;
+  const journal = s?.fulljournalname || s?.source || null;
+  const yMatch = String(s?.epubdate||s?.pubdate||s?.sortpubdate||'').match(/(19|20)\d{2}/);
+  const year = yMatch ? parseInt(yMatch[0],10) : null;
+  const authors = Array.isArray(s?.authors) ? s.authors.map(a=>({family:(a?.name||'').split(' ')[0]||'', given:(a?.name||'').split(' ').slice(1).join(' ')||''})) : [];
+  let doi = null;
+  if(Array.isArray(s?.articleids)){
+    const doiId = s.articleids.find(x=>x?.idtype==='doi'); if(doiId?.value) doi = doiId.value;
+  }
+  // Keywords or MeSH
+  let keywords=[];
+  if(Array.isArray(s?.keywords)) keywords = s.keywords.map(k=> String(k||'').trim()).filter(Boolean);
+  if(keywords.length===0 && Array.isArray(s?.meshheadinglist)){
+    keywords = s.meshheadinglist.map(m=> typeof m==='string'? m : (m?.meshheading||''))
+                                .map(x=>String(x||'').trim()).filter(Boolean);
+  }
+  return { title, journal, year, authors, doi, pmid, keywords, sources:['PubMed'], raw:{pubmed:s} };
+}
+
+async function pubmedSearchByDOI(doi, recTitle){
+  const term = encodeURIComponent(doi);
+  const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${term}`;
+  const sres = await fetch(sUrl);
+  if(!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
+  const sjson = await sres.json();
+  const pmids = sjson?.esearchresult?.idlist || [];
+  if(pmids.length===0) throw new Error('No PMID found for DOI');
+  const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmids.join(','))}&retmode=json`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(`PubMed esummary ${res.status}`);
+  const json = await res.json();
+  let best = null, bestScore = -1;
+  for(const id of pmids){
+    const s = json?.result?.[id]; if(!s) continue;
+    const ids = Array.isArray(s?.articleids) ? s.articleids : [];
+    const doiId = ids.find(x=>x?.idtype==='doi');
+    if(doiId && normalizeDOI(doiId.value)===normalizeDOI(doi)) { best=s; break; }
+    if(recTitle){ const sc = scoreTitleMatch(recTitle, s?.title||''); if(sc>bestScore){bestScore=sc; best=s;} }
+  }
+  best = best || json?.result?.[pmids[0]];
+  const pmid = String(best?.uid || pmids[0]);
+  return pubmedSummaryByPMID(pmid);
+}
+
+async function pubmedAbstractByPMID(pmid){
+  const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=xml`;
+  try{
+    const res = await fetch(url); if(!res.ok) throw new Error(`PubMed efetch ${res.status}`);
+    const text = await res.text(); const xml = new DOMParser().parseFromString(text,'application/xml');
+    const nodes = Array.from(xml.getElementsByTagName('AbstractText'));
+    const content = nodes.map(n=>n.textContent.trim()).filter(Boolean).join('\n\n');
+    return content || null;
+  }catch(err){ return null; }
+}
+
+// =============================
+//     Merge / Dedup Utilities
+// =============================
+function mergeRecords(a,b){
+  const out={...a};
+  ['title','journal','year'].forEach(f=>{ if((!out[f]||out[f]==='—') && b&&b[f]) out[f]=b[f]; });
+  if((!out.authors || out.authors.length===0) && b?.authors?.length) out.authors=b.authors;
+  out.doi = normalizeDOI(out.doi) || normalizeDOI(b?.doi) || null;
+  out.pmid = normalizePMID(out.pmid) || normalizePMID(b?.pmid) || null;
+  const ak = Array.isArray(out.keywords)? out.keywords: [];
+  const bk = Array.isArray(b?.keywords)? b.keywords: [];
+  out.keywords = Array.from(new Set([...ak, ...bk].map(x=>String(x||'').trim()).filter(Boolean)));
+  out.sources = Array.from(new Set([...(a.sources||[]), ...((b&&b.sources)||[])]));
+  out._abstract = out._abstract || b?._abstract || null;
+  out.raw = {...(a.raw||{}), ...(b?.raw||{})};
+  return out;
+}
+function titleNearDuplicate(a,b){ if(!a.title || !b.title) return false; return scoreTitleMatch(a.title,b.title) >= 0.85; }
+
+// =============================
+//            State
+// =============================
+const state = { records:[], index:new Map(), sort:'year_desc', query:'', queueSize:0 };
+
+function addOrMerge(rec){
+  rec = {...rec};
+  rec.doi = normalizeDOI(rec.doi); rec.pmid = normalizePMID(rec.pmid);
+  if(!Array.isArray(rec.keywords)) rec.keywords=[];
+  const keys = [];
+  if(rec.doi) keys.push(`doi:${rec.doi.toLowerCase()}`);
+  if(rec.pmid) keys.push(`pmid:${rec.pmid}`);
+  let existing = null;
+  for(const k of keys){ if(state.index.has(k)){ existing = state.index.get(k); break; } }
+  if(!existing){
+    for(const r of state.records){ if(titleNearDuplicate(r,rec)){ existing=r; break; } }
+  }
+  if(existing){
+    const merged = mergeRecords(existing, rec);
+    if(merged.doi) state.index.set(`doi:${merged.doi.toLowerCase()}`, merged);
+    if(merged.pmid) state.index.set(`pmid:${merged.pmid}`, merged);
+    const idx = state.records.indexOf(existing); if(idx>=0) state.records[idx]=merged;
+    return existing!==merged; // indicate updated
+  } else {
+    rec.sources = Array.from(new Set(rec.sources||[]));
+    state.records.push(rec);
+    if(rec.doi) state.index.set(`doi:${rec.doi.toLowerCase()}`, rec);
+    if(rec.pmid) state.index.set(`pmid:${rec.pmid}`, rec);
+    return true;
+  }
+}
+
+// =============================
+//        Rendering
+// =============================
+function formatAuthors(authors){
+  if(!Array.isArray(authors) || authors.length===0) return '—';
+  return authors.map(a=>{
+    if(typeof a==='string') return a;
+    const family = a.family||a.last||a.lastname||a.surname||'';
+    const given = a.given||a.first||a.forename||'';
+    const initials = given ? given.split(/\s+/).map(w=>w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
+    return (family && initials) ? `${family}, ${initials}` : (family || given || '—');
+  }).join('; ');
+}
+
+function bucketForYear(y){ const n=parseInt(y,10); if(!n) return 'Unknown Year'; const end = n + (5 - (n % 5 || 5)); const start=end-4; return `${start}-${end}`; }
+
+function compareBy(sortKey){
+  const coll = new Intl.Collator('en',{sensitivity:'base',numeric:true});
+  function val(r){
+    switch(sortKey){
+      case 'title_az': case 'title_za': return r.title||'';
+      case 'journal_az': return r.journal||'';
+      case 'author_az': return (formatAuthors(r.authors).split(';')[0]||'').trim();
+      case 'year_asc': case 'year_desc': default: return parseInt(r.year,10)||0;
+    }
+  }
+  return (a,b)=>{
+    const va=val(a), vb=val(b);
+    if(sortKey==='year_desc') return vb-va;
+    if(sortKey==='year_asc') return va-vb;
+    if(sortKey==='title_za') return coll.compare(vb,va);
+    return coll.compare(va,vb);
+  };
+}
+
+function filteredAndSorted(){
+  const q=((state.query)||'').toLowerCase();
+  const list = state.records.filter(r=>{
+    if(!q) return true;
+    const kws = (Array.isArray(r.keywords)? r.keywords.join(' '):'');
+    return [r.title, r.journal, formatAuthors(r.authors), r.year?.toString(), r.doi, r.pmid, kws]
+      .some(f=> f && String(f).toLowerCase().includes(q));
+  }).slice();
+  list.sort(compareBy(state.sort));
+  return list;
+}
+
+function render(){
+  document.getElementById('queueIndicator').textContent = `Queue: ${state.queueSize}`;
+  const container=document.getElementById('groups');
+  container.innerHTML='';
+  const list=filteredAndSorted();
+  const groupByYear = (state.sort==='year_desc' || state.sort==='year_asc');
+  if(groupByYear){
+    const buckets=new Map();
+    for(const r of list){ const b=bucketForYear(r.year); if(!buckets.has(b)) buckets.set(b,[]); buckets.get(b).push(r); }
+    const order=Array.from(buckets.keys()).sort((a,b)=>{
+      const ea = a==='Unknown Year'? -Infinity : parseInt(a.split('-')[1],10);
+      const eb = b==='Unknown Year'? -Infinity : parseInt(b.split('-')[1],10);
+      return (state.sort==='year_desc') ? (eb-ea) : (ea-eb);
+    });
+    for(const label of order){
+      const grp=document.createElement('div'); grp.className='group';
+      const header=document.createElement('div'); header.className='group-header';
+      const h3=document.createElement('h3'); h3.textContent=label;
+      const count=document.createElement('div'); count.className='group-count';
+      const arr=buckets.get(label);
+      count.textContent=`${arr.length} entr${arr.length===1?'y':'ies'}`;
+      header.appendChild(h3); header.appendChild(count);
+      const entries=document.createElement('div'); entries.className='entries';
+      header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
+      for(const r of arr) entries.appendChild(renderEntry(r));
+      grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
+    }
+  } else {
+    const grp=document.createElement('div'); grp.className='group';
+    const header=document.createElement('div'); header.className='group-header';
+    const h3=document.createElement('h3'); h3.textContent='All entries';
+    const count=document.createElement('div'); count.className='group-count';
+    count.textContent=`${list.length} entr${list.length===1?'y':'ies'}`;
+    header.appendChild(h3); header.appendChild(count);
+    const entries=document.createElement('div'); entries.className='entries';
+    header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
+    for(const r of list) entries.appendChild(renderEntry(r));
+    grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
+  }
+}
+
+function renderEntry(r){
+  const e=document.createElement('div'); e.className='entry';
+  const title=r.title||'(title unavailable)';
+  const journal=r.journal||'—'; const year=r.year||'—';
+  const line=document.createElement('div');
+  if(r.doi){ const doiLink=`https://doi.org/${r.doi}`; line.innerHTML=`<span class="ok">•</span> <a class="link entry-title" href="${doiLink}" target="_blank" rel="noopener">${title}</a>`; }
+  else line.innerHTML=`<span class="ok">•</span> <strong class="entry-title">${title}</strong>`;
+  const meta=document.createElement('div'); meta.className='meta';
+  meta.innerHTML=`${formatAuthors(r.authors)} · <em>${journal}</em> · ${year}`;
+
+  const controls=document.createElement('div'); controls.className='row';
+  const pmidWrap=document.createElement('div'); pmidWrap.className='pmid-wrap';
+  const label=document.createElement('span'); label.textContent='PMID:';
+  const codeEl=document.createElement('code'); codeEl.textContent=r.pmid||'—';
+  const copyBtn=document.createElement('button'); copyBtn.className='mini-btn'; copyBtn.textContent='📋'; if(!r.pmid) copyBtn.disabled=true;
+  copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(String(r.pmid)); setStatus('PMID copied'); setTimeout(()=>setStatus(''),1200);}catch{ setStatus('Clipboard failed'); setTimeout(()=>setStatus(''),1500);} });
+  pmidWrap.appendChild(label); pmidWrap.appendChild(codeEl); pmidWrap.appendChild(copyBtn);
+
+  const absBtn=document.createElement('button'); absBtn.className='mini-btn'; absBtn.textContent=r._abstractShown?'Hide abstract':'Show abstract';
+  const absContainer=document.createElement('div'); absContainer.className='abstract'+(r._abstractShown?'':' hidden'); absContainer.textContent=r._abstractShown?(r._abstract||'(No abstract available)'):'';
+  absBtn.addEventListener('click', async ()=>{
+    if(!r._abstractShown){ setStatus('Fetching abstract...'); if(!r._abstract && r.pmid){ r._abstract = await pubmedAbstractByPMID(r.pmid); saveCache(); } r._abstractShown=true; setStatus(''); }
+    else { r._abstractShown=false; }
+    render();
+  });
+
+  // Keywords row
+  const kwWrap=document.createElement('div'); kwWrap.className='kw-wrap';
+  (Array.isArray(r.keywords)? r.keywords: []).slice(0,24).forEach(kw=>{
+    const span=document.createElement('span'); span.className='kw'; span.textContent=kw; kwWrap.appendChild(span);
+  });
+
+  controls.appendChild(pmidWrap);
+  controls.appendChild(absBtn);
+  e.appendChild(line); e.appendChild(meta); e.appendChild(controls); if((r.keywords||[]).length) e.appendChild(kwWrap); e.appendChild(absContainer);
+  return e;
+}
+
+function setStatus(msg){ document.getElementById('status').textContent = msg||''; }
+
+// =============================
+//        Networking & Queue
+// =============================
+let inFlight=0; const queue=[]; let lastRun=0;
+async function schedule(task){
+  return new Promise((resolve,reject)=>{ queue.push({task,resolve,reject}); pump(); });
+}
+async function pump(){
+  while(inFlight<MAX_CONCURRENT && queue.length){
+    const now=Date.now(); const since=now-lastRun; const wait=Math.max(0, MIN_DELAY_MS - since);
+    const {task,resolve,reject} = queue.shift();
+    inFlight++; state.queueSize=inFlight+queue.length; render();
+    setTimeout(async ()=>{
+      lastRun=Date.now();
+      try{ const v = await task(); resolve(v); }
+      catch(e){ reject(e); }
+      finally{ inFlight--; state.queueSize=inFlight+queue.length; render(); pump(); }
+    }, wait);
+  }
+}
+
+// =============================
+//        Cache (versioned)
+// =============================
+function packCache(){ return { version: CACHE_VERSION, records: state.records }; }
+function unpackCache(obj){ if(!obj || obj.version!==CACHE_VERSION || !Array.isArray(obj.records)) return null; return obj.records; }
+function saveCache(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify(packCache())) }catch(e){} }
+
+// =============================
+//       Resolution Pipeline
+// =============================
+async function resolveIdentifier(ident){
+  if(ident.type==='pmid'){
+    let a = await schedule(()=>pubmedSummaryByPMID(ident.id));
+    if(a?.doi){ const b = await schedule(()=>crossrefByDOI(normalizeDOI(a.doi))); a = mergeRecords(a,b); }
+    return a;
+  } else if(ident.type==='doi'){
+    let a = await schedule(()=>crossrefByDOI(normalizeDOI(ident.id)));
+    if(!a.title || !a.journal || !a.year || (a.authors||[]).length===0){
+      const b = await schedule(()=>pubmedSearchByDOI(normalizeDOI(ident.id), a.title)); a = mergeRecords(a,b); }
+    return a;
+  }
+  throw new Error('Unknown identifier type');
+}
+
+async function resolveMissingForRecord(rec){
+  try{
+    if(rec.pmid){
+      const rich = await resolveIdentifier({type:'pmid', id:rec.pmid});
+      return mergeRecords(rec, rich);
+    }
+    // If no PMID, try DOI if present in rec; else leave as-is to avoid heavy title searches by default.
+    if(rec.doi){
+      const cr = await schedule(()=>crossrefByDOI(rec.doi));
+      return mergeRecords(rec, cr);
+    }
+    return rec;
+  }catch(e){ return rec; }
+}
+
+function recordIsComplete(r){
+  const hasCore = Boolean((r.title||'').trim()) && Boolean((r.journal||'').trim()) && (parseInt(r.year,10)||0)>0;
+  const hasAuthors = Array.isArray(r.authors) && r.authors.length>0;
+  const hasId = Boolean(r.pmid) || Boolean(r.doi);
+  return hasCore && hasAuthors && hasId; // adjust if you want keywords mandatory
+}
+
+async function enrichAllIncremental(){
+  const total = state.records.length; let done=0, skipped=0;
+  for(let i=0; i<state.records.length; i++){
+    const r = state.records[i];
+    if(recordIsComplete(r)){ skipped++; continue; }
+    const enriched = await resolveMissingForRecord(r);
+    const changed = addOrMerge(enriched);
+    if(changed){ saveCache(); render(); }
+    done++; setStatus(`Enriched ${done}, skipped ${skipped}, of ${total}…`);
+  }
+  setStatus(`Ready. Enriched ${done}, skipped ${skipped}.`);
+}
+
+// =============================
+//           Boot
+// =============================
+function wireUI(){
+  const searchEl=document.getElementById('search');
+  const sortEl=document.getElementById('sort');
+  const resetEl=document.getElementById('reset');
+  const addBtn=document.getElementById('addId');
+  const idInput=document.getElementById('idInput');
+  searchEl.addEventListener('input', e=>{ state.query=e.target.value; saveCache(); render(); });
+  sortEl.addEventListener('change', e=>{ state.sort=e.target.value; saveCache(); render(); });
+  resetEl.addEventListener('click', ()=>{ state.query=''; searchEl.value=''; state.sort='year_desc'; sortEl.value='year_desc'; saveCache(); render(); });
+  const onlinePill=document.getElementById('netIndicator');
+  function updateNet(){ onlinePill.textContent = navigator.onLine? 'Online':'Offline'; onlinePill.style.color = navigator.onLine? '#a7f3d0':'#fecaca'; }
+  window.addEventListener('online', updateNet); window.addEventListener('offline', updateNet); updateNet();
+  addBtn.addEventListener('click', addById);
+  idInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addById(); });
+}
+
+function classifyId(input){ const v=String(input||'').trim(); if(/^\d+$/.test(v)) return {type:'pmid', id:v}; if(/^10\./.test(v)||/^doi:/i.test(v)||/^https?:\/\/doi\.org\//i.test(v)) return {type:'doi', id:normalizeDOI(v)}; return null; }
+
+async function addById(){
+  const raw=document.getElementById('idInput').value.trim(); if(!raw){ setStatus('Please paste a DOI or a PubMed ID.'); return; }
+  const ident=classifyId(raw); if(!ident){ setStatus('Could not detect DOI or PMID.'); return; }
+  setStatus('Adding entry…');
+  try{
+    const rec = await resolveIdentifier(ident);
+    addOrMerge(rec); render(); saveCache(); setStatus('Entry added.');
+    document.getElementById('idInput').value='';
+  }catch(err){ setStatus('Failed to add entry.'); }
+}
+
+async function loadCSV(){
+  const res = await fetch(DATA_CSV, {cache:'no-store'});
+  if(!res.ok) throw new Error(`Failed to fetch ${DATA_CSV}: ${res.status}`);
+  const text = await res.text();
+  const rows = csvToRows(text);
+  const objs = rowsToObjects(rows);
+  // minimal records from CSV
+  const csvMinimal = objs.map(o=>({
+    title:o.title, journal:o.journal, year:(o.year||'').trim(),
+    authors:[], doi:null, pmid: normalizePMID(o.pmid), keywords:[], sources:['CSV']
+  }));
+  for(const r of csvMinimal){ addOrMerge(r); }
+  saveCache();
+}
+
+(async function(){
+  wireUI();
+  // 1) Load cache first for an instant enriched view (if available)
+  let hadCache=false;
+  try{
+    const raw=localStorage.getItem(CACHE_KEY);
+    if(raw){ const obj=JSON.parse(raw); const cached=unpackCache(obj); if(cached){ state.records=cached; state.index=new Map(); for(const r of state.records){ if(r.doi) state.index.set(`doi:${String(r.doi).toLowerCase()}`, r); if(r.pmid) state.index.set(`pmid:${r.pmid}`, r); } hadCache=true; render(); setStatus(`Loaded ${state.records.length} record(s) from local cache.`); } }
+  }catch(e){ /* ignore */ }
+
+  // 2) Always load CSV and merge into existing state so new rows appear
+  try{ await loadCSV(); render(); saveCache(); }catch(err){ setStatus('Could not load CSV. Make sure new_cleaned_records.csv is in the same folder.'); }
+
+  // 3) Incremental enrichment – only enrich incomplete records
+  await enrichAllIncremental();
+})();
+</script>
 </body>
 </html>
