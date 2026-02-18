@@ -83,7 +83,6 @@
 </div>
 
 <script>
-
 // =============================
 //   Configuration & Constants
 // =============================
@@ -292,28 +291,22 @@ function addOrMerge(rec){
 //        Rendering
 // =============================
 function formatAuthors(authors){
-  const { truncate = false, head = 3, tail = 3 } = opts;
-
-  if (!Array.isArray(authors) || authors.length === 0) return '—';
-
-  const toDisplay = (a) => {
-    if (typeof a === 'string') return a;
-    const family = a.family || a.last || a.lastname || a.surname || '';
-    const given  = a.given  || a.first || a.forename || '';
-    const initials = given ? given.split(/\s+/).map(w => w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
+  if(!Array.isArray(authors) || authors.length===0) return '—';
+  return authors.map(a=>{
+    if(typeof a==='string') return a;
+    const family = a.family||a.last||a.lastname||a.surname||'';
+    const given = a.given||a.first||a.forename||'';
+    const initials = given ? given.split(/\s+/).map(w=>w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
     return (family && initials) ? `${family}, ${initials}` : (family || given || '—');
-  };
-
-  const list = authors.map(toDisplay);
-
-  if (truncate && authors.length >= (head + tail + 1)) {
-    const headPart = list.slice(0, head);
-    const tailPart = list.slice(-tail);
-    return [...headPart, '…', ...tailPart].join('; ');
-  }
-
-  return list.join('; ');
+  }).join('; ');
 }
+
+
+function journalLabelOf(r){
+  const j = (r.journal || '').trim();
+  return j.length ? j : 'Unknown Journal';
+}
+
 
 function bucketForYear(y){ const n=parseInt(y,10); if(!n) return 'Unknown Year'; const end = n + (5 - (n % 5 || 5)); const start=end-4; return `${start}-${end}`; }
 
@@ -348,77 +341,91 @@ function filteredAndSorted(){
   return list;
 }
 
-
-function journalLabelOf(r){
-  const j = (r.journal || '').trim();
-  return j.length ? j : 'Unknown Journal';
-}
-
 function render(){
   document.getElementById('queueIndicator').textContent = `Queue: ${state.queueSize}`;
-  const container=document.getElementById('groups');
-  container.innerHTML='';
+  const container = document.getElementById('groups');
+  container.innerHTML = '';
 
-  const list=filteredAndSorted();
+  const list = filteredAndSorted();
 
-  const groupByYear = (state.sort==='year_desc' || state.sort==='year_asc');
-  const groupByJournal = (state.sort==='journal_az');
+  // Decide grouping strategy
+  const groupByYear    = (state.sort === 'year_desc' || state.sort === 'year_asc');
+  const groupByJournal = (state.sort === 'journal_az'); // NEW: group when Journal A–Z is active
 
-  if(groupByYear){
-    const buckets=new Map();
-    for(const r of list){ const b=bucketForYear(r.year); if(!buckets.has(b)) buckets.set(b,[]); buckets.get(b).push(r); }
-    const order=Array.from(buckets.keys()).sort((a,b)=>{
+  if (groupByYear) {
+    // ----- existing year grouping -----
+    const buckets = new Map();
+    for (const r of list){
+      const b = bucketForYear(r.year);
+      if (!buckets.has(b)) buckets.set(b, []);
+      buckets.get(b).push(r);
+    }
+    const order = Array.from(buckets.keys()).sort((a,b)=>{
       const ea = a==='Unknown Year'? -Infinity : parseInt(a.split('-')[1],10);
       const eb = b==='Unknown Year'? -Infinity : parseInt(b.split('-')[1],10);
       return (state.sort==='year_desc') ? (eb-ea) : (ea-eb);
     });
-    for(const label of order){
-      const grp=document.createElement('div'); grp.className='group';
-      const header=document.createElement('div'); header.className='group-header';
-      const h3=document.createElement('h3'); h3.textContent=label;
-      const count=document.createElement('div'); count.className='group-count';
-      const arr=buckets.get(label);
-      count.textContent=`${arr.length} entr${arr.length===1?'y':'ies'}`;
+    for (const label of order){
+      const grp = document.createElement('div'); grp.className='group';
+      const header = document.createElement('div'); header.className='group-header';
+      const h3 = document.createElement('h3'); h3.textContent = label;
+      const count = document.createElement('div'); count.className='group-count';
+      const arr = buckets.get(label);
+      count.textContent = `${arr.length} entr${arr.length===1?'y':'ies'}`;
       header.appendChild(h3); header.appendChild(count);
-      const entries=document.createElement('div'); entries.className='entries';
+      const entries = document.createElement('div'); entries.className='entries';
       header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
-      for(const r of arr) entries.appendChild(renderEntry(r));
+      for (const r of arr) entries.appendChild(renderEntry(r));
       grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
     }
-  } else if (groupByJournal){
-    const buckets=new Map();
-    for(const r of list){ const label=journalLabelOf(r); if(!buckets.has(label)) buckets.set(label,[]); buckets.get(label).push(r); }
-    const coll=new Intl.Collator('en',{sensitivity:'base'});
-    const labels=Array.from(buckets.keys());
-    labels.sort((a,b)=>{
-      const ua=(a==='Unknown Journal'), ub=(b==='Unknown Journal');
-      if(ua&&ub) return 0; if(ua) return 1; if(ub) return -1; return coll.compare(a,b);
+
+  } else if (groupByJournal) {
+    // ----- NEW: group by journal for Journal A–Z sort -----
+    const buckets = new Map();
+    for (const r of list){
+      const label = journalLabelOf(r);
+      if (!buckets.has(label)) buckets.set(label, []);
+      buckets.get(label).push(r);
+    }
+
+    // Sort journal labels A–Z; keep "Unknown Journal" at the end
+    const coll = new Intl.Collator('en', { sensitivity: 'base' });
+    const labels = Array.from(buckets.keys());
+    labels.sort((a, b) => {
+      const ua = (a === 'Unknown Journal'), ub = (b === 'Unknown Journal');
+      if (ua && ub) return 0;
+      if (ua) return 1;            // push Unknown to bottom
+      if (ub) return -1;
+      return coll.compare(a, b);
     });
-    for(const label of labels){
-      const grp=document.createElement('div'); grp.className='group';
-      const header=document.createElement('div'); header.className='group-header';
-      const h3=document.createElement('h3'); h3.textContent=label;
-      const count=document.createElement('div'); count.className='group-count';
-      const arr=buckets.get(label);
-      // Secondary sort: Year descending within each journal
-      arr.sort((a,b)=>(parseInt(b.year,10)||0)-(parseInt(a.year,10)||0));
-      count.textContent=`${arr.length} entr${arr.length===1?'y':'ies'}`;
+
+    for (const label of labels){
+      const grp = document.createElement('div'); grp.className='group';
+      const header = document.createElement('div'); header.className='group-header';
+      const h3 = document.createElement('h3'); h3.textContent = label;
+      const count = document.createElement('div'); count.className='group-count';
+      const arr = buckets.get(label);
+      // Secondary sort: Year descending (newest first)
+      arr.sort((a,b)=>(parseInt(b.year,10)||0) - (parseInt(a.year,10)||0));
+      count.textContent = `${arr.length} entr${arr.length===1?'y':'ies'}`;
       header.appendChild(h3); header.appendChild(count);
-      const entries=document.createElement('div'); entries.className='entries';
+      const entries = document.createElement('div'); entries.className='entries';
       header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
-      for(const r of arr) entries.appendChild(renderEntry(r));
+      for (const r of arr) entries.appendChild(renderEntry(r));
       grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
     }
+
   } else {
-    const grp=document.createElement('div'); grp.className='group';
-    const header=document.createElement('div'); header.className='group-header';
-    const h3=document.createElement('h3'); h3.textContent='All entries';
-    const count=document.createElement('div'); count.className='group-count';
-    count.textContent=`${list.length} entr${list.length===1?'y':'ies'}`;
+    // ----- existing flat "All entries" -----
+    const grp = document.createElement('div'); grp.className='group';
+    const header = document.createElement('div'); header.className='group-header';
+    const h3 = document.createElement('h3'); h3.textContent = 'All entries';
+    const count = document.createElement('div'); count.className='group-count';
+    count.textContent = `${list.length} entr${list.length===1?'y':'ies'}`;
     header.appendChild(h3); header.appendChild(count);
-    const entries=document.createElement('div'); entries.className='entries';
+    const entries = document.createElement('div'); entries.className='entries';
     header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
-    for(const r of list) entries.appendChild(renderEntry(r));
+    for (const r of list) entries.appendChild(renderEntry(r));
     grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
   }
 }
@@ -431,7 +438,7 @@ function renderEntry(r){
   if(r.doi){ const doiLink=`https://doi.org/${r.doi}`; line.innerHTML=`<span class="ok">•</span> <a class="link entry-title" href="${doiLink}" target="_blank" rel="noopener">${title}</a>`; }
   else line.innerHTML=`<span class="ok">•</span> <strong class="entry-title">${title}</strong>`;
   const meta=document.createElement('div'); meta.className='meta';
-  meta.innerHTML = `${formatAuthors(r.authors, { truncate: !(r._authorsExpanded === true), head: 3, tail: 3 })} · <em>${journal}</em> · ${year}`;
+  meta.innerHTML=`${formatAuthors(r.authors)} · <em>${journal}</em> · ${year}`;
 
   const controls=document.createElement('div'); controls.className='row';
   const pmidWrap=document.createElement('div'); pmidWrap.className='pmid-wrap';
@@ -447,19 +454,7 @@ function renderEntry(r){
     if(!r._abstractShown){ setStatus('Fetching abstract...'); if(!r._abstract && r.pmid){ r._abstract = await pubmedAbstractByPMID(r.pmid); saveCacheDebounced(); } r._abstractShown=true; setStatus(''); }
     else { r._abstractShown=false; }
     render();
-  }
- // Authors toggle (only enabled if there are 7+ authors)
- const authBtn = document.createElement('button');
- authBtn.className = 'mini-btn';
- const hasManyAuthors = Array.isArray(r.authors) && r.authors.length >= 7;
- authBtn.textContent = r._authorsExpanded ? 'Hide authors' : 'Show authors';
- if (!hasManyAuthors) authBtn.disabled = true;
-
- authBtn.addEventListener('click', () => {
-   r._authorsExpanded = !r._authorsExpanded;
-   render();
- });
-);
+  });
 
   // Keywords row
   const kwWrap=document.createElement('div'); kwWrap.className='kw-wrap';
@@ -469,7 +464,6 @@ function renderEntry(r){
 
   controls.appendChild(pmidWrap);
   controls.appendChild(absBtn);
- controls.appendChild(authBtn);
   e.appendChild(line); e.appendChild(meta); e.appendChild(controls); if((r.keywords||[]).length) e.appendChild(kwWrap); e.appendChild(absContainer);
   return e;
 }
@@ -611,24 +605,107 @@ async function enrichAllIncremental(){
   setStatus(`Ready. Enriched ${done}, skipped ${skipped}.`);
 }
 
+
+
+// =============================
+// Export / Download Helpers
+// =============================
+function collectAllPmids(){
+  const set = new Set();
+  for (const r of state.records){
+    const p = normalizePMID(r && r.pmid);
+    if (p) set.add(p);
+  }
+  return Array.from(set);
+}
+function downloadTextFile(filename, text){
+  try{
+    const blob = new Blob([text], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return true;
+  }catch(e){
+    try{ // Fallback
+      const a = document.createElement('a');
+      a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return true;
+    }catch(_){}
+  }
+  return false;
+}
+function downloadAllPmids(){
+  const pmids = collectAllPmids();
+  const content = pmids.join('\n') + (pmids.length ? '\n' : '');
+  const ok = downloadTextFile('all_pmids.txt', content);
+  if (ok) setStatus(`Saved ${pmids.length} PMID${pmids.length===1?'':'s'} to all_pmids.txt`);
+  else setStatus('Download failed');
+}
+
+// In wireUI()
+const dlBtn = document.getElementById('downloadPmids');
+if (dlBtn) dlBtn.addEventListener('click', downloadAllPmids);
+
+
 // =============================
 //           Boot
 // =============================
 function wireUI(){
-  const searchEl=document.getElementById('search');
-  const sortEl=document.getElementById('sort');
-  const resetEl=document.getElementById('reset');
-  const addBtn=document.getElementById('addId');
-  const idInput=document.getElementById('idInput');
-  searchEl.addEventListener('input', e=>{ state.query=e.target.value; saveCacheDebounced(); render(); });
-  sortEl.addEventListener('change', e=>{ state.sort=e.target.value; saveCacheDebounced(); render(); });
-  resetEl.addEventListener('click', ()=>{ state.query=''; searchEl.value=''; state.sort='year_desc'; sortEl.value='year_desc'; saveCacheDebounced(); render(); });
-  const onlinePill=document.getElementById('netIndicator');
-  function updateNet(){ onlinePill.textContent = navigator.onLine? 'Online':'Offline'; onlinePill.style.color = navigator.onLine? '#a7f3d0':'#fecaca'; }
-  window.addEventListener('online', updateNet); window.addEventListener('offline', updateNet); updateNet();
+  // Core controls
+  const searchEl = document.getElementById('search');
+  const sortEl   = document.getElementById('sort');
+  const resetEl  = document.getElementById('reset');
+  const addBtn   = document.getElementById('addId');
+  const idInput  = document.getElementById('idInput');
+
+  // Search, sort, reset
+  searchEl.addEventListener('input', e=>{
+    state.query = e.target.value;
+    saveCacheDebounced();
+    render();
+  });
+  sortEl.addEventListener('change', e=>{
+    state.sort = e.target.value;
+    saveCacheDebounced();
+    render();
+  });
+  resetEl.addEventListener('click', ()=>{
+    state.query = '';
+    searchEl.value = '';
+    state.sort = 'year_desc';
+    sortEl.value = 'year_desc';
+    saveCacheDebounced();
+    render();
+  });
+
+  // Online/offline indicator
+  const onlinePill = document.getElementById('netIndicator');
+  function updateNet(){
+    onlinePill.textContent = navigator.onLine ? 'Online' : 'Offline';
+    onlinePill.style.color = navigator.onLine ? '#a7f3d0' : '#fecaca';
+  }
+  window.addEventListener('online',  updateNet);
+  window.addEventListener('offline', updateNet);
+  updateNet();
+
+  // Add-by-ID interactions
   addBtn.addEventListener('click', addById);
-  idInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addById(); });
+  idInput.addEventListener('keydown', e=>{ if (e.key === 'Enter') addById(); });
+
+  // Optional: hook up "Download PMIDs" button if present
+  const dlBtn = document.getElementById('downloadPmids');
+  if (dlBtn) dlBtn.addEventListener('click', downloadAllPmids);
 }
+
 
 function classifyId(input){ const v=String(input||'').trim(); if(/^\d+$/.test(v)) return {type:'pmid', id:v}; if(/^10\./.test(v)||/^doi:/i.test(v)||/^https?:\/\/doi\.org\//i.test(v)) return {type:'doi', id:normalizeDOI(v)}; return null; }
 
@@ -694,7 +771,8 @@ render();
 
   // 3) Incremental enrichment – only enrich incomplete records
   await enrichAllIncremental();
-})();  
+})();
+  
 </script>
 </body>
 </html>
