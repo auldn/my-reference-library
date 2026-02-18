@@ -467,6 +467,13 @@ async function loadPmidsQueue() {
     if (!m) { skipped++; continue; }
     const pmid = m[0];
 
+    // ✅ Skip if this PMID already exists AND is complete (prevents re-work after refresh)
+    const existing = state.index.get(`pmid:${pmid}`);
+    if (existing && recordIsComplete(existing)) {
+      skipped++;
+      continue;
+    }
+
     try {
       // Reuse your existing resolution pipeline (already rate-limited via schedule/pump)
       const rec = await resolveIdentifier({ type: 'pmid', id: pmid });
