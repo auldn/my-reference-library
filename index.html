@@ -828,11 +828,18 @@ async function resolveMissingForRecord(rec){
 }
 
 function recordIsComplete(r){
-  const hasCore = Boolean((r.title||'').trim()) && Boolean((r.journal||'').trim()) && (parseInt(r.year,10)||0)>0;
-  const hasAuthors = Array.isArray(r.authors) && r.authors.length>0;
+  const hasCore = Boolean((r.title||'').trim())
+    && Boolean((r.journal||'').trim())
+    && (parseInt(r.year,10)||0) > 0;
+  const hasAuthors = Array.isArray(r.authors) && r.authors.length > 0;
   const hasId = Boolean(r.pmid) || Boolean(r.doi);
-  return hasCore && hasAuthors && hasId; // adjust if you want keywords mandatory
+
+  // NEW: require at least one keyword to treat as complete
+  const hasKeywords = Array.isArray(r.keywords) && r.keywords.length > 0;
+
+  return hasCore && hasAuthors && hasId && hasKeywords;
 }
+
 
 
 async function enrichAllIncremental(){
