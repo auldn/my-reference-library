@@ -240,6 +240,19 @@ async function pubmedAbstractByPMID(pmid){
   }catch(err){ return null; }
 }
 
+  async function enrichAllIncremental(){
+  const total = state.records.length; let done=0, skipped=0;
+  for(let i=0; i<state.records.length; i++){
+    const r = state.records[i];
+    if(recordIsComplete(r)){ skipped++; continue; }
+    const enriched = await resolveMissingForRecord(r);
+    const changed = addOrMerge(enriched);
+    if(changed){ saveCacheDebounced(); render(); }
+    done++; setStatus(`Enriched ${done}, skipped ${skipped}, of ${total}…`);
+  }
+  setStatus(`Ready. Enriched ${done}, skipped ${skipped}.`);
+}
+
 // =============================
 //     Merge / Dedup Utilities
 // =============================
@@ -822,6 +835,8 @@ render();
     setStatus(`Could not load ${ID_QUEUE_FILE}: ${err.message}`);
   }
 
+   // 3) Incremental enrichment – only enrich incomplete records
+  await enrichAllIncremental();
 })();
   
 </script>
