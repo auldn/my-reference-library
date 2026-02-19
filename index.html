@@ -120,7 +120,7 @@
 // =============================
 const DATA_CSV = 'new_cleaned_records.csv'; // keep this next to new_index.html
 const CACHE_KEY = 'reflib_v7_keywords_inc';
-const CACHE_VERSION = 2;            // bump to invalidate all cached data
+const CACHE_VERSION = 3;            // bump to invalidate all cached data
 const CONTACT_EMAIL = 'example@users.noreply';
 const ID_QUEUE_FILE = 'id_queue_pmids.txt';
 
@@ -833,28 +833,9 @@ function recordIsComplete(r){
     && (parseInt(r.year,10)||0) > 0;
   const hasAuthors = Array.isArray(r.authors) && r.authors.length > 0;
   const hasId = Boolean(r.pmid) || Boolean(r.doi);
-
-  // NEW: require at least one keyword to treat as complete
-  const hasKeywords = Array.isArray(r.keywords) && r.keywords.length > 0;
-
-  return hasCore && hasAuthors && hasId && hasKeywords;
+  const hasKeywords = Array.isArray(r.keywords) && r.keywords.length > 0; // NEW
+  return hasCore && hasAuthors && hasId && hasKeywords; // NEW requirement
 }
-
-
-
-async function enrichAllIncremental(){
-  const total = state.records.length; let done=0, skipped=0;
-  for(let i=0; i<state.records.length; i++){
-    const r = state.records[i];
-    if(recordIsComplete(r)){ skipped++; continue; }
-    const enriched = await resolveMissingForRecord(r);
-    const changed = addOrMerge(enriched);
-    if(changed){ saveCacheDebounced(); render(); }
-    done++; setStatus(`Enriched ${done}, skipped ${skipped}, of ${total}…`);
-  }
-  setStatus(`Ready. Enriched ${done}, skipped ${skipped}.`);
-}
-
 
 
 // =============================
