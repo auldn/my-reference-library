@@ -36,11 +36,6 @@
     .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:.1rem .5rem;font-size:.8em;color:#a5b4fc;background:#0b1020}
     .kw{display:inline-block;border:1px solid #334155;background:#0b1020;color:#93c5fd;border-radius:999px;padding:.05rem .5rem;margin:.15rem .25rem 0 0;font-size:.78em}
     .kw-wrap{margin-top:.4rem}
-    /* keywords already use .kw — add subtle states */
-    .kw { cursor: pointer; user-select: none; }
-    .kw.user { background: #eef2ff; border-color: #c7d2fe; }
-    .kw.selected { outline: 2px solid #60a5fa; }
-    .chips .kw { margin: 2px 4px; display: inline-block; }
   </style>
 </head>
 <body>
@@ -66,28 +61,6 @@
       <div style="height:.6rem"></div>
       <button id="reset">Reset grouping</button>
       <div id="status" class="status"></div>
-
- <!-- Keyword Filter Bar -->
-  <div class="row" id="kwFilterWrap" style="margin-top: 0.5rem;">
-    <strong style="margin-right: .5rem;">Filter by keyword:</strong>
-
-    <div id="kwSelected" class="chips" style="display:inline-block;"></div>
-
-    <label style="margin-left:1rem;">
-      <input type="radio" name="kwMode" value="all" checked>
-      Match ALL
-    </label>
-    <label style="margin-left:.5rem;">
-      <input type="radio" name="kwMode" value="any">
-      Match ANY
-    </label>
-
-    <button id="kwClear" class="mini-btn" style="margin-left:.75rem;">Clear</button>
-    <span id="kwSummary" style="margin-left:.5rem;color:#9ca3af;"></span>
-  </div>
-
-  <!-- Optional: a cloud of available keywords to click on/off -->
-  <div id="kwCloud" class="chips" style="margin-top:.25rem;"></div>
      </div>
 
 
@@ -114,14 +87,13 @@
 </div>
 
 <script>
-
 // =============================
 //   Configuration & Constants
 // =============================
 const DATA_CSV = 'new_cleaned_records.csv'; // keep this next to new_index.html
-const CACHE_KEY = 'reflib_v7_keywords_inc';
-const CACHE_VERSION = 3;            // bump to invalidate all cached data
-const CONTACT_EMAIL = 'example@users.noreply';
+const CACHE_KEY = 'reflib_v7_inc';
+const CACHE_VERSION = 4;            // bump to invalidate all cached data
+const CONTACT_EMAIL = 'auldn@gmail.com';
 const ID_QUEUE_FILE = 'id_queue_pmids.txt';
 
 // Concurrency and rate limiting (be kind to public APIs)
@@ -184,34 +156,6 @@ function normalizeTitle(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9
 function titleWordSet(t){ return new Set(normalizeTitle(t).split(' ').filter(w=>w.length>2)); }
 function jaccard(a,b){ const ia=new Set(); for(const x of a){ if(b.has(x)) ia.add(x); } return ia.size/Math.max(1,(new Set([...a,...b])).size); }
 function scoreTitleMatch(t1,t2){ return jaccard(titleWordSet(t1), titleWordSet(t2)); }
-
-// --- Keyword helpers (NEW) ---
-function normKw(s){ return String(s || '').toLowerCase().trim(); }
-function displayKw(s){ return s; } // keep as-is; you can prettify here if wanted
-
-function allKeywordsOf(r){
-  const a = Array.isArray(r.keywords) ? r.keywords : [];
-  const u = Array.isArray(r.userKeywords) ? r.userKeywords : [];
-  // normalize -> unique -> return display strings as stored
-  const seen = new Set();
-  const out = [];
-  for (const x of [...a, ...u]) {
-  const n = normKw(x);
-  if (!n || seen.has(n)) continue; // <-- fix
-  seen.add(n);
-  out.push(x);
-}
-
-  return out;
-}
-
-function toggleKwFilter(kw){
-  const n = normKw(kw);
-  if (state.selectedKeywords.has(n)) state.selectedKeywords.delete(n);
-  else state.selectedKeywords.add(n);
-  saveCacheDebounced();
-  render();
-}
 
 
 // =============================
@@ -325,8 +269,6 @@ const state = {
   sort: 'year_desc',
   query: '',
   queueSize: 0,
-  selectedKeywords: new Set(),  // NEW: active filter chips
-  kwMode: 'all'                 // NEW: 'all' | 'any'
 };
 
 
@@ -403,23 +345,13 @@ function compareBy(sortKey){
 function filteredAndSorted(){
   const q=((state.query)||'').toLowerCase();
   const list = state.records.filter(r=>{
-  // 1) Keyword filter (NEW)
-  if (state.selectedKeywords.size) {
-    const have = new Set(allKeywordsOf(r).map(normKw));
-    const keys = Array.from(state.selectedKeywords);
-    const match = (state.kwMode === 'all')
-      ? keys.every(k => have.has(k))
-      : keys.some(k => have.has(k));
-    if (!match) return false;
-  }
   // 2) Free-text filter (existing)
   if (!q) return true;
-  const kws = allKeywordsOf(r).join(' '); // uses both built-in and user tags (NEW)
-  return [r.title, r.journal, formatAuthors(r.authors), r.year?.toString(), r.doi, r.pmid, kws]
+  return [r.title, r.journal, formatAuthors(r.authors), r.year?.toString(), r.doi, r.pmid]
     .some(f => f && String(f).toLowerCase().includes(q));
 }).slice();
 
-  // ⬇️ These two lines were missing
+  // These two lines were missing
   list.sort(compareBy(state.sort));
   return list;
 
@@ -442,55 +374,7 @@ function lastSurnameOf(r){
   return out.length ? out : 'Unknown Last Author';
 }
 
-function renderKeywordFilter(){
-  const selected = document.getElementById('kwSelected');
-  const cloud = document.getElementById('kwCloud');
-  const summary = document.getElementById('kwSummary');
-  if (!selected || !cloud) return;
 
-  // Build frequency map from the *currently visible list* to keep it relevant
-  const visible = filteredAndSorted(); // already respects filters, but we want cloud from *all* records:
-  const all = state.records; // switch to 'visible' if you want a cascading facet
-
-  const counts = new Map();
-  for (const r of all){
-    for (const k of allKeywordsOf(r)){
-      const n = normKw(k);
-      counts.set(n, (counts.get(n)||0) + 1);
-    }
-  }
-
-  const chosen = Array.from(state.selectedKeywords);
-  // render selected chips
-  selected.innerHTML = '';
-  chosen.forEach(n=>{
-    const span = document.createElement('span');
-    span.className = 'kw selected';
-    span.textContent = displayKw(n);
-    span.title = 'Click to remove from filter';
-    span.addEventListener('click', ()=>toggleKwFilter(n));
-    selected.appendChild(span);
-  });
-
-  // render cloud (top N by frequency, then A–Z)
-  const entries = Array.from(counts.entries());
-  entries.sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
-  cloud.innerHTML = '';
-  for (const [n,c] of entries.slice(0, 200)) { // cap to avoid huge DOMs
-    const span = document.createElement('span');
-    const isSel = state.selectedKeywords.has(n);
-    span.className = 'kw' + (isSel?' selected':'');
-    span.textContent = displayKw(n) + ` (${c})`;
-    span.title = isSel ? 'Click to remove' : 'Click to add';
-    span.addEventListener('click', ()=>toggleKwFilter(n));
-    cloud.appendChild(span);
-  }
-
-  // summary
-  summary.textContent = chosen.length
-    ? `${chosen.length} selected · mode: ${state.kwMode.toUpperCase()}`
-    : 'No keyword filter';
-}
 
 function render(){
 
@@ -600,8 +484,6 @@ function render(){
     grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
   }
 
-  renderKeywordFilter(); // NEW
-
 }
 
 function renderEntry(r){
@@ -630,67 +512,11 @@ function renderEntry(r){
     render();
   });
 
-  // Keywords & Tags row (UPDATED)
-const kwWrap = document.createElement('div');
-kwWrap.className = 'kw-wrap';
-
-// ensure userKeywords exists
-if (!Array.isArray(r.userKeywords)) r.userKeywords = [];
-
-// render combined chips (built-in + user) with click-to-filter
-allKeywordsOf(r).slice(0, 48).forEach(kw => {
-  const span = document.createElement('span');
-  const isUser = (r.userKeywords || []).map(normKw).includes(normKw(kw));
-  const isSel = state.selectedKeywords.has(normKw(kw));
-  span.className = 'kw' + (isUser ? ' user' : '') + (isSel ? ' selected' : '');
-  span.textContent = kw;
-  span.title = isSel ? 'Click to remove from filter' : 'Click to add to filter';
-  span.addEventListener('click', () => toggleKwFilter(kw));
-  kwWrap.appendChild(span);
-
-  // small '×' to remove *user* tags only (won't touch PubMed keywords)
-  if (isUser) {
-    const x = document.createElement('button');
-    x.className = 'mini-btn';
-    x.style.marginLeft = '4px';
-    x.textContent = '×';
-    x.title = 'Remove this user tag';
-    x.addEventListener('click', (ev)=>{
-      ev.stopPropagation();
-      r.userKeywords = (r.userKeywords || []).filter(t => normKw(t) !== normKw(kw));
-      saveCacheDebounced();
-      render();
-    });
-    const wrap = document.createElement('span');
-    wrap.style.marginRight = '6px';
-    wrap.appendChild(x);
-    kwWrap.appendChild(wrap);
-  }
-});
-
-// “+ tag” button
-const addTagBtn = document.createElement('button');
-addTagBtn.className = 'mini-btn';
-addTagBtn.textContent = '+ tag';
-addTagBtn.title = 'Add one or more tags (comma separated)';
-addTagBtn.addEventListener('click', ()=>{
-  const input = prompt('Add keyword/tag(s), comma-separated:');
-  if (!input) return;
-  const parts = input.split(',').map(s => s.trim()).filter(Boolean);
-  if (!parts.length) return;
-  r.userKeywords = Array.from(new Set([...(r.userKeywords || []), ...parts]));
-  saveCacheDebounced();
-  render();
-});
-kwWrap.appendChild(addTagBtn);
-
-controls.appendChild(pmidWrap);
-controls.appendChild(absBtn);
+ 
 
 e.appendChild(line);
 e.appendChild(meta);
 e.appendChild(controls);
-if (allKeywordsOf(r).length) e.appendChild(kwWrap);
 e.appendChild(absContainer);
   return e;
 }
@@ -725,8 +551,6 @@ function packCache(){
   return {
     version: CACHE_VERSION,
     records: state.records,
-    selectedKeywords: Array.from(state.selectedKeywords), // NEW
-    kwMode: state.kwMode                                  // NEW
   };
 }
 
@@ -734,8 +558,6 @@ function unpackCache(obj){
   if(!obj || obj.version!==CACHE_VERSION || !Array.isArray(obj.records)) return null;
   // hydrate filter state if present
   try {
-    state.selectedKeywords = new Set(Array.isArray(obj.selectedKeywords) ? obj.selectedKeywords.map(normKw) : []);
-    state.kwMode = (obj.kwMode === 'any') ? 'any' : 'all';
   } catch(_) {}
   return obj.records;
 }
@@ -833,8 +655,7 @@ function recordIsComplete(r){
     && (parseInt(r.year,10)||0) > 0;
   const hasAuthors = Array.isArray(r.authors) && r.authors.length > 0;
   const hasId = Boolean(r.pmid) || Boolean(r.doi);
-  const hasKeywords = Array.isArray(r.keywords) && r.keywords.length > 0; // NEW
-  return hasCore && hasAuthors && hasId && hasKeywords; // NEW requirement
+  return hasCore && hasAuthors && hasId;
 }
 
 
@@ -898,25 +719,6 @@ function wireUI(){
   const addBtn   = document.getElementById('addId');
   const idInput  = document.getElementById('idInput');
 
-  // Keyword filter wiring (NEW)
-  const wrap = document.getElementById('kwFilterWrap');
-  if (wrap) {
-    wrap.addEventListener('change', (e)=>{
-      if (e.target && e.target.name === 'kwMode') {
-        state.kwMode = (e.target.value === 'any') ? 'any' : 'all';
-        saveCacheDebounced();
-        render();
-      }
-    });
-    const clearBtn = document.getElementById('kwClear');
-    if (clearBtn) {
-      clearBtn.addEventListener('click', ()=>{
-        state.selectedKeywords.clear();
-        saveCacheDebounced();
-        render();
-      });
-    }
-  }
 
   // Search, sort, reset
   searchEl.addEventListener('input', e=>{
@@ -1020,8 +822,6 @@ render();
     setStatus(`Could not load ${ID_QUEUE_FILE}: ${err.message}`);
   }
 
-  // 3) Incremental enrichment – only enrich incomplete records
-  await enrichAllIncremental();
 })();
   
 </script>
