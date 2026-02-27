@@ -591,21 +591,6 @@ async function addById(){
   }catch(err){ setStatus('Failed to add entry.'); }
 }
 
-async function loadCSV(){
-  const res = await fetch(DATA_CSV, {cache:'no-store'});
-  if(!res.ok) throw new Error(`Failed to fetch ${DATA_CSV}: ${res.status}`);
-  const text = await res.text();
-  const rows = csvToRows(text);
-  const objs = rowsToObjects(rows);
-  // minimal records from CSV
-  const csvMinimal = objs.map(o=>({
-    title:o.title, journal:o.journal, year:(o.year||'').trim(),
-    authors:[], doi:null, pmid: normalizePMID(o.pmid), keywords:[], sources:['CSV']
-  }));
-  for(const r of csvMinimal){ addOrMerge(r); }
-  saveCacheDebounced();
-}
-
 (async function(){
   wireUI();
 
