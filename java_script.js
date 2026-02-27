@@ -16,9 +16,9 @@ const MIN_DELAY_MS = 400; // ~2.5 req/s aggregate
 function normalizeDOI(raw){
   if(!raw) return null;
   let s = String(raw).trim();
-  s = s.replace(/^https?:\/\/doi\.org\//i,''); // strip domain prefix
-  s = s.replace(/^doi:\s*/i,'');                  // strip leading 'doi:'
-  s = s.replace(/[\s<>\[\]\(\)\u200B]+$/g,''); // trailing whitespace/brackets/ZWS
+  s = s.replace(/^https?:\/\/doi\.org\//i, ''); // strip domain prefix
+  s = s.replace(/^doi:\s*/i, '');                  // strip leading 'doi:'
+  s = s.replace(/[\s<>\[\]\(\)\u200B]+$/g, ''); // trailing whitespace/brackets/ZWS
   return s || null;
 }
 
