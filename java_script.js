@@ -5,7 +5,6 @@ const CACHE_KEY = 'reflib_v8_inc';
 const CACHE_VERSION = 8; // bump to invalidate all cached data
 const CONTACT_EMAIL = 'example@users.noreply';
 const ID_QUEUE_FILE = 'id_queue_pmids.txt';
-
 // Concurrency and rate limiting (be kind to public APIs)
 const MAX_CONCURRENT = 2; // parallel lookups
 const MIN_DELAY_MS = 400; // ~2.5 req/s aggregate
@@ -16,25 +15,29 @@ const MIN_DELAY_MS = 400; // ~2.5 req/s aggregate
 function normalizeDOI(raw){
   if(!raw) return null;
   let s = String(raw).trim();
-  s = s.replace(/^https?:\/\/doi\.org\//i, ''); // strip domain prefix
-  s = s.replace(/^doi:\s*/i, '');                  // strip leading 'doi:'
-  s = s.replace(/[\s<>\[\]\(\)\u200B]+$/g, ''); // trailing whitespace/brackets/ZWS
+  s = s.replace(/^https?:\/\/doi\.org\//i,'');       // strip domain prefix
+  s = s.replace(/^doi:\s*/i,'');                    // strip leading 'doi:'
+  s = s.replace(/[\s<>\[\]\(\)\u200B]+$/g,'');      // trailing whitespace/brackets/ZWS
   return s || null;
 }
-
 function normalizePMID(raw){
   if(!raw) return null;
   const m = String(raw).trim().match(/\d+/);
   return m ? m[0] : null;
 }
-
 function stripHtml(s){
-  return String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return String(s || '')
+    .replace(/<[^>]+>/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
 }
-
 // Title similarity helpers
 function normalizeTitle(t){
-  return String(t || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  return String(t || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
 }
 function titleWordSet(t){
   return new Set(normalizeTitle(t).split(' ').filter(w => w.length > 2));
@@ -58,13 +61,18 @@ async function crossrefByDOI(doi){
     if(!res.ok) throw new Error(`CrossRef ${res.status}`);
     const json = await res.json();
     const it = json?.message;
-    const title = Array.isArray(it?.title) ? it.title[0] : it?.title || null;
+
+    const title = Array.isArray(it?.title) ? it.title[0] : (it?.title || null);
     const journal = Array.isArray(it?.['container-title']) ? it['container-title'][0]
-                     : (it?.['container-title'] || it?.shortContainerTitle || null);
-    const dateParts = it?.issued?.['date-parts']?.[0] || it?.created?.['date-parts']?.[0] || [];
-    const year = dateParts[0] || (it?.created?.['date-time'] ? new Date(it.created['date-time']).getFullYear() : null);
+                   : (it?.['container-title'] || it?.shortContainerTitle || null);
+    const dateParts = it?.issued?.['date-parts']?.[0]
+                   || it?.created?.['date-parts']?.[0]
+                   || [];
+    const year = dateParts[0]
+              || (it?.created?.['date-time'] ? new Date(it.created['date-time']).getFullYear() : null);
     const authors = Array.isArray(it?.author) ? it.author.map(a => ({family:a.family, given:a.given})) : [];
     const abstract = it?.abstract ? stripHtml(it.abstract) : null;
+
     return { title, journal, year, authors, doi, pmid:null, keywords:[], sources:['CrossRef'], raw:{crossref:it}, _abstract:abstract };
   }catch(err){
     return { title:null, journal:null, year:null, authors:[], doi, pmid:null, keywords:[], sources:['CrossRef(error)'], _abstract:null, _error:String(err) };
@@ -78,20 +86,25 @@ async function pubmedSummaryByPMID(pmid){
   const json = await res.json();
   const s = json?.result?.[pmid];
   if(!s) throw new Error('No esummary result');
-  const title = s?.title || null;
+
+  const title   = s?.title || null;
   const journal = s?.fulljournalname || s?.source || null;
-  const yMatch = String(s?.epubdate || s?.pubdate || s?.sortpubdate || '').match(/(19|20)\d{2}/);
-  const year = yMatch ? parseInt(yMatch[0], 10) : null;
+  const yMatch  = String(s?.epubdate || s?.pubdate || s?.sortpubdate || '').match(/(19|20)\d{2}/);
+  const year    = yMatch ? parseInt(yMatch[0], 10) : null;
+
   const authors = Array.isArray(s?.authors)
     ? s.authors.map(a => ({
         family: (a?.name || '').split(' ')[0] || '',
         given : (a?.name || '').split(' ').slice(1).join(' ') || ''
-      })) : [];
+      }))
+    : [];
+
   let doi = null;
   if(Array.isArray(s?.articleids)){
     const doiId = s.articleids.find(x => x?.idtype === 'doi');
     if(doiId?.value) doi = doiId.value;
   }
+
   // Keywords or MeSH
   let keywords = [];
   if(Array.isArray(s?.keywords))
@@ -105,11 +118,11 @@ async function pubmedSummaryByPMID(pmid){
   return { title, journal, year, authors, doi, pmid, keywords, sources:['PubMed'], raw:{pubmed:s} };
 }
 
+// Single-fetch esearch, then esummary
 async function pubmedSearchByDOI(doi, recTitle) {
   const term = encodeURIComponent(doi);
   const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${term}`;
 
-  // --- Single esearch fetch ---
   const sres = await fetch(sUrl);
   if (!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
   const sjson = await sres.json();
@@ -117,7 +130,6 @@ async function pubmedSearchByDOI(doi, recTitle) {
   const pmids = (sjson?.esearchresult?.idlist) || [];
   if (pmids.length === 0) throw new Error('No PMID found for DOI');
 
-  // Then esummary once for all candidates (unchanged behavior)
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmids.join(','))}&retmode=json`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`PubMed esummary ${res.status}`);
@@ -128,21 +140,16 @@ async function pubmedSearchByDOI(doi, recTitle) {
   for (const id of pmids) {
     const s = json?.result?.[id];
     if (!s) continue;
-
     const ids = Array.isArray(s?.articleids) ? s.articleids : [];
     const doiId = ids.find(x => x?.idtype === 'doi');
     if (doiId && normalizeDOI(doiId.value) === normalizeDOI(doi)) { best = s; break; }
-
     if (recTitle) {
       const sc = scoreTitleMatch(recTitle, s?.title || '');
       if (sc > bestScore) { bestScore = sc; best = s; }
     }
   }
-
   best = best || json?.result?.[pmids[0]];
   const pmid = String(best?.uid || pmids[0]);
-
-  // Reuse existing helper to convert to your internal record shape
   return pubmedSummaryByPMID(pmid);
 }
 
@@ -168,6 +175,7 @@ function mergeRecords(a,b){
   const out = {...a};
   ['title','journal','year'].forEach(f => { if((!out[f] || out[f] === '—') && b && b[f]) out[f] = b[f]; });
   if((!out.authors || out.authors.length === 0) && b?.authors?.length) out.authors = b.authors;
+
   out.doi  = normalizeDOI(out.doi)  || normalizeDOI(b?.doi)  || null;
   out.pmid = normalizePMID(out.pmid) || normalizePMID(b?.pmid) || null;
 
@@ -180,7 +188,6 @@ function mergeRecords(a,b){
   out.raw = { ...(a.raw || {}), ...(b?.raw || {}) };
   return out;
 }
-
 function titleNearDuplicate(a,b){
   if(!a.title || !b.title) return false;
   return scoreTitleMatch(a.title, b.title) >= 0.85;
@@ -190,23 +197,19 @@ function titleNearDuplicate(a,b){
 // State
 // =============================
 const state = { records:[], index:new Map(), sort:'year_desc', query:'', queueSize:0 };
-
 function addOrMerge(rec){
   rec = {...rec};
   rec.doi = normalizeDOI(rec.doi);
   rec.pmid = normalizePMID(rec.pmid);
   if(!Array.isArray(rec.keywords)) rec.keywords = [];
-
   const keys = [];
   if(rec.doi)  keys.push(`doi:${rec.doi.toLowerCase()}`);
   if(rec.pmid) keys.push(`pmid:${rec.pmid}`);
-
   let existing = null;
   for(const k of keys){ if(state.index.has(k)){ existing = state.index.get(k); break; } }
   if(!existing){
     for(const r of state.records){ if(titleNearDuplicate(r, rec)){ existing = r; break; } }
   }
-
   if(existing){
     const merged = mergeRecords(existing, rec);
     if(merged.doi)  state.index.set(`doi:${merged.doi.toLowerCase()}`, merged);
@@ -237,11 +240,22 @@ function formatAuthors(authors){
   }).join('; ');
 }
 
+// NEW: helper to get author name array using same formatting as formatAuthors
+function authorNameArray(authors){
+  if(!Array.isArray(authors) || authors.length === 0) return [];
+  return authors.map(a => {
+    if(typeof a === 'string') return a;
+    const family = a.family || a.last || a.lastname || a.surname || '';
+    const given  = a.given  || a.first || a.forename || '';
+    const initials = given ? given.split(/\s+/).map(w => w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
+    return (family && initials) ? `${family}, ${initials}` : (family || given || '—');
+  });
+}
+
 function journalLabelOf(r){
   const j = (r.journal || '').trim();
   return j.length ? j : 'Unknown Journal';
 }
-
 function firstAuthorLabelOf(r){
   if(!Array.isArray(r.authors) || r.authors.length === 0) return 'Unknown Author';
   const a = r.authors[0];
@@ -252,7 +266,6 @@ function firstAuthorLabelOf(r){
   const label = (family && initials) ? `${family}, ${initials}` : (family || given || 'Unknown Author');
   return label.trim() || 'Unknown Author';
 }
-
 function seniorAuthorLabelOf(r){
   if(!Array.isArray(r.authors) || r.authors.length === 0) return 'Unknown Senior Author';
   const a = r.authors[r.authors.length - 1];
@@ -263,7 +276,6 @@ function seniorAuthorLabelOf(r){
   const label = (family && initials) ? `${family}, ${initials}` : (family || given || 'Unknown Senior Author');
   return label.trim() || 'Unknown Senior Author';
 }
-
 function bucketForYear(y){
   const n = parseInt(y, 10);
   if(!n) return 'Unknown Year';
@@ -271,16 +283,18 @@ function bucketForYear(y){
   const start = end - 4;
   return `${start}-${end}`;
 }
-
 function compareBy(sortKey){
   const coll = new Intl.Collator('en', {sensitivity:'base', numeric:true});
   function val(r){
     switch(sortKey){
-      case 'title_az': case 'title_za': return r.title || '';
+      case 'title_az':
+      case 'title_za':   return r.title || '';
       case 'journal_az': return r.journal || '';
       case 'author_az':  return (firstAuthorLabelOf(r) || '');
       case 'senior_az':  return (seniorAuthorLabelOf(r) || '');
-      case 'year_asc': case 'year_desc': default: return parseInt(r.year,10) || 0;
+      case 'year_asc':
+      case 'year_desc':
+      default:           return parseInt(r.year,10) || 0;
     }
   }
   return (a,b) => {
@@ -291,14 +305,13 @@ function compareBy(sortKey){
     return coll.compare(va, vb);
   };
 }
-
 function filteredAndSorted(){
   const q = (state.query || '').toLowerCase();
   const list = state.records.filter(r => {
     if(!q) return true;
     const kws = (Array.isArray(r.keywords) ? r.keywords.join(' ') : '');
     return [r.title, r.journal, formatAuthors(r.authors), r.year?.toString(), r.doi, r.pmid, kws]
-      .some(f => f && String(f).toLowerCase().includes(q));
+           .some(f => f && String(f).toLowerCase().includes(q));
   }).slice();
   list.sort(compareBy(state.sort));
   return list;
@@ -315,8 +328,8 @@ function render(){
   // Decide grouping strategy
   const groupByYear    = (state.sort === 'year_desc' || state.sort === 'year_asc');
   const groupByJournal = (state.sort === 'journal_az'); // group when Journal A–Z is active
-  const groupByAuthor  = (state.sort === 'author_az');   // group when First author A–Z is active
-  const groupBySenior  = (state.sort === 'senior_az');   // NEW: group when Senior author A–Z is active
+  const groupByAuthor  = (state.sort === 'author_az');  // group when First author A–Z is active
+  const groupBySenior  = (state.sort === 'senior_az');  // group when Senior author A–Z is active
 
   if (groupByYear) {
     const buckets = new Map();
@@ -350,7 +363,6 @@ function render(){
       if (!buckets.has(label)) buckets.set(label, []);
       buckets.get(label).push(r);
     }
-    // Sort journal labels A–Z; keep "Unknown Journal" at the end
     const coll = new Intl.Collator('en', { sensitivity: 'base' });
     const labels = Array.from(buckets.keys());
     labels.sort((a, b) => {
@@ -376,7 +388,6 @@ function render(){
       grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
     }
   } else if (groupByAuthor) {
-    // Group by first author
     const buckets = new Map();
     for (const r of list){
       const label = firstAuthorLabelOf(r);
@@ -398,7 +409,11 @@ function render(){
       const h3 = document.createElement('h3'); h3.textContent = label;
       const count = document.createElement('div'); count.className='group-count';
       const arr = buckets.get(label);
-      arr.sort((a,b)=>{ const dy=(parseInt(b.year,10)||0)-(parseInt(a.year,10)||0); if (dy!==0) return dy; return coll.compare(a.title||'', b.title||''); });
+      arr.sort((a,b)=>{
+        const dy=(parseInt(b.year,10)||0)-(parseInt(a.year,10)||0);
+        if (dy!==0) return dy;
+        return coll.compare(a.title||'', b.title||'');
+      });
       count.textContent = `${arr.length} entr${arr.length===1?'y':'ies'}`;
       header.appendChild(h3); header.appendChild(count);
       const entries = document.createElement('div'); entries.className='entries';
@@ -407,7 +422,6 @@ function render(){
       grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
     }
   } else if (groupBySenior) {
-    // NEW: Group by senior (last) author
     const buckets = new Map();
     for (const r of list){
       const label = seniorAuthorLabelOf(r);
@@ -430,7 +444,11 @@ function render(){
       const count = document.createElement('div'); count.className='group-count';
       const arr = buckets.get(label);
       // Secondary sort inside each senior author: Year ↓ then Title A–Z
-      arr.sort((a,b)=>{ const dy=(parseInt(b.year,10)||0)-(parseInt(a.year,10)||0); if (dy!==0) return dy; return coll.compare(a.title||'', b.title||''); });
+      arr.sort((a,b)=>{
+        const dy=(parseInt(b.year,10)||0)-(parseInt(a.year,10)||0);
+        if (dy!==0) return dy;
+        return coll.compare(a.title||'', b.title||'');
+      });
       count.textContent = `${arr.length} entr${arr.length===1?'y':'ies'}`;
       header.appendChild(h3); header.appendChild(count);
       const entries = document.createElement('div'); entries.className='entries';
@@ -452,6 +470,39 @@ function render(){
   }
 }
 
+// NEW: render authors with truncate/expand for ≥ 7 authors
+function renderAuthors(container, record){
+  const names = authorNameArray(record.authors);
+  container.innerHTML = ''; // clear
+  const showAll = Boolean(record._authorsExpanded);
+  let display = names;
+
+  if (names.length >= 7 && !showAll) {
+    display = [...names.slice(0,3), '…', ...names.slice(-3)];
+  }
+
+  // Build "A; B; C … X; Y; Z"
+  let first = true;
+  for (const part of display){
+    if (!first) container.appendChild(document.createTextNode('; '));
+    first = false;
+    const span = document.createElement('span');
+    span.className = 'author';
+    span.textContent = part;
+    container.appendChild(span);
+  }
+
+  if (names.length >= 7) {
+    container.appendChild(document.createTextNode(' '));
+    const btn = document.createElement('button');
+    btn.className = 'mini-btn';
+    btn.title = showAll ? 'Show fewer authors' : 'Show all authors';
+    btn.textContent = showAll ? 'Show fewer' : `Show all (${names.length})`;
+    btn.addEventListener('click', () => { record._authorsExpanded = !record._authorsExpanded; render(); });
+    container.appendChild(btn);
+  }
+}
+
 function renderEntry(r){
   const e = document.createElement('div'); e.className='entry';
   const title = r.title || '(title unavailable)';
@@ -467,7 +518,23 @@ function renderEntry(r){
   }
 
   const meta = document.createElement('div'); meta.className='meta';
-  meta.innerHTML = `${formatAuthors(r.authors)} · <em>${journal}</em> · ${year}`;
+
+  // Authors (with expand/collapse)
+  const authorsWrap = document.createElement('span');
+  authorsWrap.className = 'authors';
+  renderAuthors(authorsWrap, r);
+
+  // Separator + journal + year
+  const sep1 = document.createTextNode(' · ');
+  const jEl  = document.createElement('em'); jEl.textContent = journal;
+  const sep2 = document.createTextNode(' · ');
+  const yEl  = document.createTextNode(String(year));
+
+  meta.appendChild(authorsWrap);
+  meta.appendChild(sep1);
+  meta.appendChild(jEl);
+  meta.appendChild(sep2);
+  meta.appendChild(yEl);
 
   const controls = document.createElement('div'); controls.className='row';
   const pmidWrap = document.createElement('div'); pmidWrap.className='pmid-wrap';
@@ -475,7 +542,8 @@ function renderEntry(r){
   const codeEl = document.createElement('code'); codeEl.textContent = r.pmid || '—';
   const copyBtn = document.createElement('button'); copyBtn.className='mini-btn'; copyBtn.textContent='📋'; if(!r.pmid) copyBtn.disabled = true;
   copyBtn.addEventListener('click', async () => {
-    try{ await navigator.clipboard.writeText(String(r.pmid)); setStatus('PMID copied'); setTimeout(()=>setStatus(''),1200);}catch{ setStatus('Clipboard failed'); setTimeout(()=>setStatus(''),1500);} 
+    try{ await navigator.clipboard.writeText(String(r.pmid)); setStatus('PMID copied'); setTimeout(()=>setStatus(''),1200);}
+    catch{ setStatus('Clipboard failed'); setTimeout(()=>setStatus(''),1500);}
   });
   pmidWrap.appendChild(label); pmidWrap.appendChild(codeEl); pmidWrap.appendChild(copyBtn);
 
@@ -539,29 +607,27 @@ async function pump(){
 // =============================
 // Cache (versioned)
 // =============================
-function packCache() {
+function packCache(){
   // Strip transient fields before saving to localStorage
   const lean = state.records.map(r => {
     if (!r) return r;
-    const { _abstract, _abstractShown, ...rest } = r;
+    const { _abstract, _abstractShown, _authorsExpanded, ...rest } = r;
     return rest;
   });
   return { version: CACHE_VERSION, records: lean };
 }
-
-function unpackCache(obj) {
-  if (!obj || obj.version !== CACHE_VERSION || !Array.isArray(obj.records)) return null;
-  // Defensive: ensure transient fields are absent if older caches persist them
+function unpackCache(obj){
+  if(!obj || obj.version!==CACHE_VERSION || !Array.isArray(obj.records)) return null;
   return obj.records.map(r => {
-    if (r && r._abstract !== undefined) { try { delete r._abstract; } catch (_) {} }
-    if (r && r._abstractShown !== undefined) { try { delete r._abstractShown; } catch (_) {} }
+    if (r && r._abstract !== undefined)       { try { delete r._abstract; } catch(_){} }
+    if (r && r._abstractShown !== undefined)  { try { delete r._abstractShown; } catch(_){} }
+    if (r && r._authorsExpanded !== undefined){ try { delete r._authorsExpanded; } catch(_){} }
     return r;
   });
 }
-
 let _saveCacheTimer = null;
-function saveCacheDebounced(delay = 250) {
-  if (_saveCacheTimer) clearTimeout(_saveCacheTimer);
+function saveCacheDebounced(delay = 250){
+  if(_saveCacheTimer) clearTimeout(_saveCacheTimer);
   _saveCacheTimer = setTimeout(() => {
     _saveCacheTimer = null;
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(packCache())); } catch (e) {}
@@ -577,7 +643,6 @@ async function loadPmidsQueue(){
   const lines = text.split(/\r?\n/).map(s => s.trim()).filter(s => s && !s.startsWith('#'));
   let processed = 0, addedOrUpdated = 0, skipped = 0;
   for (const line of lines) {
-    // Be tolerant: if someone wrote "PMID: 12345678", extract the digits
     const m = line.match(/\d+/);
     if (!m) { skipped++; continue; }
     const pmid = m[0];
@@ -585,7 +650,6 @@ async function loadPmidsQueue(){
     const existing = state.index.get(`pmid:${pmid}`);
     if (existing && recordIsComplete(existing)) { skipped++; continue; }
     try {
-      // Reuse your existing resolution pipeline (already rate-limited via schedule/pump)
       const rec = await resolveIdentifier({ type: 'pmid', id: pmid });
       const changed = addOrMerge(rec);
       if (changed) { addedOrUpdated++; saveCacheDebounced(); render(); }
@@ -617,7 +681,6 @@ async function resolveIdentifier(ident){
   }
   throw new Error('Unknown identifier type');
 }
-
 async function resolveMissingForRecord(rec){
   try{
     if(rec.pmid){
@@ -631,14 +694,12 @@ async function resolveMissingForRecord(rec){
     return rec;
   }catch(e){ return rec; }
 }
-
 function recordIsComplete(r){
   const hasCore = Boolean((r.title || '').trim()) && Boolean((r.journal || '').trim()) && ((parseInt(r.year,10) || 0) > 0);
   const hasAuthors = Array.isArray(r.authors) && r.authors.length > 0;
   const hasId = Boolean(r.pmid) || Boolean(r.doi);
   return hasCore && hasAuthors && hasId; // adjust if you want keywords mandatory
 }
-
 async function enrichAllIncremental(){
   const total = state.records.length; let done=0, skipped=0;
   for(let i=0; i<state.records.length; i++){
@@ -663,7 +724,6 @@ function collectAllPmids(){
   }
   return Array.from(set);
 }
-
 function downloadTextFile(filename, text){
   try{
     const blob = new Blob([text], {type:'text/plain'});
@@ -682,7 +742,6 @@ function downloadTextFile(filename, text){
   }
   return false;
 }
-
 function downloadAllPmids(){
   const pmids = collectAllPmids();
   const content = pmids.join('\n') + (pmids.length ? '\n' : '');
@@ -697,15 +756,15 @@ function downloadAllPmids(){
 function wireUI(){
   // Core controls
   const searchEl = document.getElementById('search');
-  const sortEl   = document.getElementById('sort');
-  const resetEl  = document.getElementById('reset');
-  const addBtn   = document.getElementById('addId');
-  const idInput  = document.getElementById('idInput');
+  const sortEl = document.getElementById('sort');
+  const resetEl = document.getElementById('reset');
+  const addBtn = document.getElementById('addId');
+  const idInput = document.getElementById('idInput');
 
   // Search, sort, reset
   if(searchEl) searchEl.addEventListener('input', e=>{ state.query = e.target.value; saveCacheDebounced(); render(); });
-  if(sortEl)   sortEl.addEventListener('change', e=>{ state.sort = e.target.value; saveCacheDebounced(); render(); });
-  if(resetEl)  resetEl.addEventListener('click', ()=>{ state.query=''; if(searchEl) searchEl.value=''; state.sort='year_desc'; if(sortEl) sortEl.value='year_desc'; saveCacheDebounced(); render(); });
+  if(sortEl) sortEl.addEventListener('change', e=>{ state.sort = e.target.value; saveCacheDebounced(); render(); });
+  if(resetEl) resetEl.addEventListener('click', ()=>{ state.query=''; if(searchEl) searchEl.value=''; state.sort='year_desc'; if(sortEl) sortEl.value='year_desc'; saveCacheDebounced(); render(); });
 
   // Online/offline indicator
   const onlinePill = document.getElementById('netIndicator');
@@ -715,21 +774,19 @@ function wireUI(){
   updateNet();
 
   // Add-by-ID interactions
-  if(addBtn)  addBtn.addEventListener('click', addById);
+  if(addBtn) addBtn.addEventListener('click', addById);
   if(idInput) idInput.addEventListener('keydown', e=>{ if (e.key === 'Enter') addById(); });
 
   // Optional: hook up "Download PMIDs" button if present
   const dlBtn = document.getElementById('downloadPmids');
   if (dlBtn) dlBtn.addEventListener('click', downloadAllPmids);
 }
-
 function classifyId(input){
   const v = String(input || '').trim();
   if(/^\d+$/.test(v)) return {type:'pmid', id:v};
   if(/^10\./.test(v) || /^doi:/i.test(v) || /^https?:\/\/doi\.org\//i.test(v)) return {type:'doi', id:normalizeDOI(v)};
   return null;
 }
-
 async function addById(){
   const el = document.getElementById('idInput');
   const raw = el ? el.value.trim() : '';
@@ -743,11 +800,9 @@ async function addById(){
     if(el) el.value = '';
   }catch(err){ setStatus('Failed to add entry.'); }
 }
-
 (async function(){
   wireUI();
   // 1) Load cache first for an instant enriched view (if available)
-  let hadCache = false;
   try{
     const raw = localStorage.getItem(CACHE_KEY);
     if (raw) {
@@ -757,29 +812,25 @@ async function addById(){
         state.records = cached;
         state.index = new Map();
         for (const r of state.records) {
-          if (r.doi) state.index.set(`doi:${String(r.doi).toLowerCase()}`, r);
+          if (r.doi)  state.index.set(`doi:${String(r.doi).toLowerCase()}`, r);
           if (r.pmid) state.index.set(`pmid:${r.pmid}`, r);
         }
-        hadCache = true;
         console.log('[cache] startup summary → records:', state.records.length,
-                    ', complete:', state.records.filter(recordIsComplete).length,
-                    ', incomplete:', state.records.length - state.records.filter(recordIsComplete).length,
-                    ', indexKeys:', state.index.size);
+          ', complete:', state.records.filter(recordIsComplete).length,
+          ', incomplete:', state.records.length - state.records.filter(recordIsComplete).length,
+          ', indexKeys:', state.index.size);
         render();
         setStatus(`Loaded ${state.records.length} record(s) from local cache.`);
       }
     }
   }catch(e){ /* ignore */ }
-
   await new Promise(r => setTimeout(r, 0));
-
   // 2) Load newline-delimited PMIDs and add them one at a time
   try {
     await loadPmidsQueue();
   } catch (err) {
     setStatus(`Could not load ${ID_QUEUE_FILE}: ${err.message}`);
   }
-
   // 3) Incremental enrichment – only enrich incomplete records
   await enrichAllIncremental();
 })();
