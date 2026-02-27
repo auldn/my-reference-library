@@ -105,34 +105,44 @@ async function pubmedSummaryByPMID(pmid){
   return { title, journal, year, authors, doi, pmid, keywords, sources:['PubMed'], raw:{pubmed:s} };
 }
 
-async function pubmedSearchByDOI(doi, recTitle){
+async function pubmedSearchByDOI(doi, recTitle) {
   const term = encodeURIComponent(doi);
   const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${term}`;
-  const sres = await fetch(sUrl);
-  if(!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
-  const sjson = await fetch(sUrl).then(r => r.json()).catch(() => null) || await sres.json();
-  const pmids = sjson?.esearchresult?.idlist || [];
-  if(pmids.length === 0) throw new Error('No PMID found for DOI');
 
+  // --- Single esearch fetch ---
+  const sres = await fetch(sUrl);
+  if (!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
+  const sjson = await sres.json();
+
+  const pmids = (sjson?.esearchresult?.idlist) || [];
+  if (pmids.length === 0) throw new Error('No PMID found for DOI');
+
+  // Then esummary once for all candidates (unchanged behavior)
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmids.join(','))}&retmode=json`;
   const res = await fetch(url);
-  if(!res.ok) throw new Error(`PubMed esummary ${res.status}`);
+  if (!res.ok) throw new Error(`PubMed esummary ${res.status}`);
   const json = await res.json();
 
+  // Choose best match: exact DOI if present; otherwise title similarity
   let best = null, bestScore = -1;
-  for(const id of pmids){
+  for (const id of pmids) {
     const s = json?.result?.[id];
-    if(!s) continue;
+    if (!s) continue;
+
     const ids = Array.isArray(s?.articleids) ? s.articleids : [];
     const doiId = ids.find(x => x?.idtype === 'doi');
-    if(doiId && normalizeDOI(doiId.value) === normalizeDOI(doi)) { best = s; break; }
-    if(recTitle){
+    if (doiId && normalizeDOI(doiId.value) === normalizeDOI(doi)) { best = s; break; }
+
+    if (recTitle) {
       const sc = scoreTitleMatch(recTitle, s?.title || '');
-      if(sc > bestScore){ bestScore = sc; best = s; }
+      if (sc > bestScore) { bestScore = sc; best = s; }
     }
   }
+
   best = best || json?.result?.[pmids[0]];
   const pmid = String(best?.uid || pmids[0]);
+
+  // Reuse existing helper to convert to your internal record shape
   return pubmedSummaryByPMID(pmid);
 }
 
