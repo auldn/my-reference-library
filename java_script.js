@@ -2,59 +2,14 @@
 // =============================
 //   Configuration & Constants
 // =============================
-const DATA_CSV = 'new_cleaned_records.csv'; // keep this next to new_index.html
-const CACHE_KEY = 'reflib_v7_keywords_inc';
-const CACHE_VERSION = 1;            // bump to invalidate all cached data
+const CACHE_KEY = 'reflib_v8_inc';
+const CACHE_VERSION = 8;            // bump to invalidate all cached data
 const CONTACT_EMAIL = 'example@users.noreply';
 const ID_QUEUE_FILE = 'id_queue_pmids.txt';
 
 // Concurrency and rate limiting (be kind to public APIs)
 const MAX_CONCURRENT = 2;        // parallel lookups
 const MIN_DELAY_MS = 400;        // ~2.5 req/s aggregate
-
-// =============================
-//         CSV Utilities
-// =============================
-function csvToRows(text){
-  const rows=[]; let i=0, field='', row=[], q=false;
-  const pushField=()=>{ row.push(field); field=''; };
-  const pushRow=()=>{ rows.push(row); row=[]; };
-  while(i<text.length){
-    const c=text[i++];
-    if(q){
-      if(c==='"'){
-        if(text[i]==='"'){ field+='"'; i++; } else { q=false; }
-      } else field+=c;
-    } else {
-      if(c==='"') q=true;
-      else if(c===',') pushField();
-      else if(c==='\n'){ pushField(); pushRow(); }
-      else if(c==='\r'){ /* ignore */ }
-      else field+=c;
-    }
-  }
-  if(field.length>0 || row.length>0){ pushField(); pushRow(); }
-  if(rows.length && rows[rows.length-1].every(v=>v==='')) rows.pop();
-  return rows;
-}
-function rowsToObjects(rows){
-  if(!rows||!rows.length) return [];
-  const header = rows[0].map(h=>String(h||'').trim().toLowerCase());
-  const idx = Object.fromEntries(header.map((h,i)=>[h,i]));
-  const get=(r,k)=>{ const i=idx[k]; return i==null?'':String(r[i]||'').trim(); };
-  const out=[];
-  for(let k=1;k<rows.length;k++){
-    const r=rows[k]; if(!r||r.every(v=>String(v||'').trim()==='')) continue;
-    out.push({
-      title:  get(r,'title'),
-      authors:get(r,'authors'),
-      journal:get(r,'journal'),
-      year:   get(r,'year'),
-      pmid:   get(r,'pmid')
-    });
-  }
-  return out;
-}
 
 // =============================
 //     Normalization Helpers
