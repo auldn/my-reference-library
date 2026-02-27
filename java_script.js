@@ -469,13 +469,13 @@ function renderEntry(r){
   });
   pmidWrap.appendChild(label); pmidWrap.appendChild(codeEl); pmidWrap.appendChild(copyBtn);
 
-  const absBtn = document.createElement('button'); absBtn.className='mini-btn'; absBtn.textContent = r._abstractShown ? 'Hide abstract' : 'Show abstract';
+  const absBtn=document.createElement('button'); absBtn.className='mini-btn'; absBtn.textContent=r._abstractShown?'Hide abstract':'Show abstract';
   const absContainer = document.createElement('div'); absContainer.className = 'abstract' + (r._abstractShown ? '' : ' hidden');
   absContainer.textContent = r._abstractShown ? (r._abstract || '(No abstract available)') : '';
   absBtn.addEventListener('click', async () => {
     if(!r._abstractShown){
       setStatus('Fetching abstract...');
-      if(!r._abstract && r.pmid){ r._abstract = await pubmedAbstractByPMID(r.pmid); saveCacheDebounced(); }
+      if(!r._abstract && r.pmid){ r._abstract = await pubmedAbstractByPMID(r.pmid); }
       r._abstractShown = true; setStatus('');
     } else {
       r._abstractShown = false;
@@ -529,8 +529,16 @@ async function pump(){
 // =============================
 // Cache (versioned)
 // =============================
-function packCache(){ return { version: CACHE_VERSION, records: state.records }; }
-function unpackCache(obj){ if(!obj || obj.version !== CACHE_VERSION || !Array.isArray(obj.records)) return null; return obj.records; }
+function packCache(){const lean = state.records.map(r|>{if (!r) return r; const{_abstract, _abstractShown, ...rest}=r; return rest; return { version: CACHE_VERSION, records: state.records }; }
+
+function unpackCache(obj){
+  if(!obj || obj.version!==CACHE_VERSION || !Array.isArray(obj.records)) return null;
+  // Defensive: remove any lingering _abstract from older caches
+  return obj.records.map(r => {
+    if (r && r._abstract !== undefined) { try { delete r._abstract; } catch(_){} }
+    return r;
+  });
+}
 
 let _saveCacheTimer = null;
 function saveCacheDebounced(delay = 250){
