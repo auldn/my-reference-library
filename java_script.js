@@ -1,10 +1,11 @@
-  // =============================
+<script>
+// =============================
 //   Configuration & Constants
 // =============================
 const DATA_CSV = 'new_cleaned_records.csv'; // keep this next to new_index.html
-const CACHE_KEY = 'reflib_v7_inc';
-const CACHE_VERSION = 4;            // bump to invalidate all cached data
-const CONTACT_EMAIL = 'auldn@gmail.com';
+const CACHE_KEY = 'reflib_v7_keywords_inc';
+const CACHE_VERSION = 1;            // bump to invalidate all cached data
+const CONTACT_EMAIL = 'example@users.noreply';
 const ID_QUEUE_FILE = 'id_queue_pmids.txt';
 
 // Concurrency and rate limiting (be kind to public APIs)
@@ -67,7 +68,6 @@ function normalizeTitle(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9
 function titleWordSet(t){ return new Set(normalizeTitle(t).split(' ').filter(w=>w.length>2)); }
 function jaccard(a,b){ const ia=new Set(); for(const x of a){ if(b.has(x)) ia.add(x); } return ia.size/Math.max(1,(new Set([...a,...b])).size); }
 function scoreTitleMatch(t1,t2){ return jaccard(titleWordSet(t1), titleWordSet(t2)); }
-
 
 // =============================
 //         API Clients
@@ -151,19 +151,6 @@ async function pubmedAbstractByPMID(pmid){
   }catch(err){ return null; }
 }
 
-  async function enrichAllIncremental(){
-  const total = state.records.length; let done=0, skipped=0;
-  for(let i=0; i<state.records.length; i++){
-    const r = state.records[i];
-    if(recordIsComplete(r)){ skipped++; continue; }
-    const enriched = await resolveMissingForRecord(r);
-    const changed = addOrMerge(enriched);
-    if(changed){ saveCacheDebounced(); render(); }
-    done++; setStatus(`Enriched ${done}, skipped ${skipped}, of ${total}…`);
-  }
-  setStatus(`Ready. Enriched ${done}, skipped ${skipped}.`);
-}
-
 // =============================
 //     Merge / Dedup Utilities
 // =============================
@@ -186,15 +173,7 @@ function titleNearDuplicate(a,b){ if(!a.title || !b.title) return false; return 
 // =============================
 //            State
 // =============================
-
-const state = {
-  records: [],
-  index: new Map(),
-  sort: 'year_desc',
-  query: '',
-  queueSize: 0,
-};
-
+const state = { records:[], index:new Map(), sort:'year_desc', query:'', queueSize:0 };
 
 function addOrMerge(rec){
   rec = {...rec};
@@ -269,49 +248,28 @@ function compareBy(sortKey){
 function filteredAndSorted(){
   const q=((state.query)||'').toLowerCase();
   const list = state.records.filter(r=>{
-  // 2) Free-text filter (existing)
-  if (!q) return true;
-  return [r.title, r.journal, formatAuthors(r.authors), r.year?.toString(), r.doi, r.pmid]
-    .some(f => f && String(f).toLowerCase().includes(q));
-}).slice();
-
-  // These two lines were missing
+    if(!q) return true;
+    const kws = (Array.isArray(r.keywords)? r.keywords.join(' '):'');
+    return [r.title, r.journal, formatAuthors(r.authors), r.year?.toString(), r.doi, r.pmid, kws]
+      .some(f=> f && String(f).toLowerCase().includes(q));
+  }).slice();
   list.sort(compareBy(state.sort));
   return list;
-
 }
-
-
-// Helper: surname of the last (senior) author
-function lastSurnameOf(r){
-  const arr = Array.isArray(r.authors) ? r.authors : [];
-  if (arr.length === 0) return 'Unknown Last Author';
-  const a = arr[arr.length - 1];
-  if (typeof a === 'string') {
-    const s = a.trim();
-    if (s.includes(',')) return s.split(',')[0].trim() || 'Unknown Last Author';
-    const parts = s.split(/\s+/).filter(Boolean);
-    return (parts.length ? parts[parts.length-1] : 'Unknown Last Author');
-  }
-  const family = a.family || a.last || a.lastname || a.surname || '';
-  const out = String(family||'').trim();
-  return out.length ? out : 'Unknown Last Author';
-}
-
-
 
 function render(){
-
   document.getElementById('queueIndicator').textContent = `Queue: ${state.queueSize}`;
   const container = document.getElementById('groups');
   container.innerHTML = '';
+
   const list = filteredAndSorted();
+
   // Decide grouping strategy
-  const groupByYear = (state.sort === 'year_desc' || state.sort === 'year_asc');
-  const groupByJournal = (state.sort === 'journal_az');
-  const groupByLastSurname = (state.sort === 'last_surname_az');
+  const groupByYear    = (state.sort === 'year_desc' || state.sort === 'year_asc');
+  const groupByJournal = (state.sort === 'journal_az'); // NEW: group when Journal A–Z is active
+
   if (groupByYear) {
-    // Year grouping (existing)
+    // ----- existing year grouping -----
     const buckets = new Map();
     for (const r of list){
       const b = bucketForYear(r.year);
@@ -336,20 +294,27 @@ function render(){
       for (const r of arr) entries.appendChild(renderEntry(r));
       grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
     }
+
   } else if (groupByJournal) {
-    // Journal grouping (existing)
+    // ----- NEW: group by journal for Journal A–Z sort -----
     const buckets = new Map();
     for (const r of list){
       const label = journalLabelOf(r);
       if (!buckets.has(label)) buckets.set(label, []);
       buckets.get(label).push(r);
     }
+
+    // Sort journal labels A–Z; keep "Unknown Journal" at the end
     const coll = new Intl.Collator('en', { sensitivity: 'base' });
     const labels = Array.from(buckets.keys());
-    labels.sort((a,b)=>{
-      const ua=(a==='Unknown Journal'), ub=(b==='Unknown Journal');
-      if(ua&&ub) return 0; if(ua) return 1; if(ub) return -1; return coll.compare(a,b);
+    labels.sort((a, b) => {
+      const ua = (a === 'Unknown Journal'), ub = (b === 'Unknown Journal');
+      if (ua && ub) return 0;
+      if (ua) return 1;            // push Unknown to bottom
+      if (ub) return -1;
+      return coll.compare(a, b);
     });
+
     for (const label of labels){
       const grp = document.createElement('div'); grp.className='group';
       const header = document.createElement('div'); header.className='group-header';
@@ -365,37 +330,9 @@ function render(){
       for (const r of arr) entries.appendChild(renderEntry(r));
       grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
     }
-  } else if (groupByLastSurname) {
-    // NEW: group by surname of last author (senior) when Last Surname A–Z is active
-    const buckets = new Map();
-    for (const r of list){
-      const label = lastSurnameOf(r) || 'Unknown Last Author';
-      if (!buckets.has(label)) buckets.set(label, []);
-      buckets.get(label).push(r);
-    }
-    const coll = new Intl.Collator('en', { sensitivity: 'base' });
-    const labels = Array.from(buckets.keys());
-    labels.sort((a,b)=>{
-      const ua=(a==='Unknown Last Author'), ub=(b==='Unknown Last Author');
-      if(ua&&ub) return 0; if(ua) return 1; if(ub) return -1; return coll.compare(a,b);
-    });
-    for (const label of labels){
-      const grp = document.createElement('div'); grp.className='group';
-      const header = document.createElement('div'); header.className='group-header';
-      const h3 = document.createElement('h3'); h3.textContent = label;
-      const count = document.createElement('div'); count.className='group-count';
-      const arr = buckets.get(label);
-      // Secondary sort: Year descending within each surname group
-      arr.sort((a,b)=>(parseInt(b.year,10)||0)-(parseInt(a.year,10)||0));
-      count.textContent = `${arr.length} entr${arr.length===1?'y':'ies'}`;
-      header.appendChild(h3); header.appendChild(count);
-      const entries = document.createElement('div'); entries.className='entries';
-      header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
-      for (const r of arr) entries.appendChild(renderEntry(r));
-      grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
-    }
+
   } else {
-    // Flat
+    // ----- existing flat "All entries" -----
     const grp = document.createElement('div'); grp.className='group';
     const header = document.createElement('div'); header.className='group-header';
     const h3 = document.createElement('h3'); h3.textContent = 'All entries';
@@ -407,7 +344,6 @@ function render(){
     for (const r of list) entries.appendChild(renderEntry(r));
     grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
   }
-
 }
 
 function renderEntry(r){
@@ -436,12 +372,15 @@ function renderEntry(r){
     render();
   });
 
- 
+  // Keywords row
+  const kwWrap=document.createElement('div'); kwWrap.className='kw-wrap';
+  (Array.isArray(r.keywords)? r.keywords: []).slice(0,24).forEach(kw=>{
+    const span=document.createElement('span'); span.className='kw'; span.textContent=kw; kwWrap.appendChild(span);
+  });
 
-e.appendChild(line);
-e.appendChild(meta);
-e.appendChild(controls);
-e.appendChild(absContainer);
+  controls.appendChild(pmidWrap);
+  controls.appendChild(absBtn);
+  e.appendChild(line); e.appendChild(meta); e.appendChild(controls); if((r.keywords||[]).length) e.appendChild(kwWrap); e.appendChild(absContainer);
   return e;
 }
 
@@ -471,20 +410,8 @@ async function pump(){
 // =============================
 //        Cache (versioned)
 // =============================
-function packCache(){
-  return {
-    version: CACHE_VERSION,
-    records: state.records,
-  };
-}
-
-function unpackCache(obj){
-  if(!obj || obj.version!==CACHE_VERSION || !Array.isArray(obj.records)) return null;
-  // hydrate filter state if present
-  try {
-  } catch(_) {}
-  return obj.records;
-}
+function packCache(){ return { version: CACHE_VERSION, records: state.records }; }
+function unpackCache(obj){ if(!obj || obj.version!==CACHE_VERSION || !Array.isArray(obj.records)) return null; return obj.records; }
 
 // Put near your Cache helpers
 let _saveCacheTimer = null;
@@ -574,13 +501,26 @@ async function resolveMissingForRecord(rec){
 }
 
 function recordIsComplete(r){
-  const hasCore = Boolean((r.title||'').trim())
-    && Boolean((r.journal||'').trim())
-    && (parseInt(r.year,10)||0) > 0;
-  const hasAuthors = Array.isArray(r.authors) && r.authors.length > 0;
+  const hasCore = Boolean((r.title||'').trim()) && Boolean((r.journal||'').trim()) && (parseInt(r.year,10)||0)>0;
+  const hasAuthors = Array.isArray(r.authors) && r.authors.length>0;
   const hasId = Boolean(r.pmid) || Boolean(r.doi);
-  return hasCore && hasAuthors && hasId;
+  return hasCore && hasAuthors && hasId; // adjust if you want keywords mandatory
 }
+
+
+async function enrichAllIncremental(){
+  const total = state.records.length; let done=0, skipped=0;
+  for(let i=0; i<state.records.length; i++){
+    const r = state.records[i];
+    if(recordIsComplete(r)){ skipped++; continue; }
+    const enriched = await resolveMissingForRecord(r);
+    const changed = addOrMerge(enriched);
+    if(changed){ saveCacheDebounced(); render(); }
+    done++; setStatus(`Enriched ${done}, skipped ${skipped}, of ${total}…`);
+  }
+  setStatus(`Ready. Enriched ${done}, skipped ${skipped}.`);
+}
+
 
 
 // =============================
@@ -642,7 +582,6 @@ function wireUI(){
   const resetEl  = document.getElementById('reset');
   const addBtn   = document.getElementById('addId');
   const idInput  = document.getElementById('idInput');
-
 
   // Search, sort, reset
   searchEl.addEventListener('input', e=>{
@@ -746,6 +685,8 @@ render();
     setStatus(`Could not load ${ID_QUEUE_FILE}: ${err.message}`);
   }
 
-   // 3) Incremental enrichment – only enrich incomplete records
+  // 3) Incremental enrichment – only enrich incomplete records
   await enrichAllIncremental();
 })();
+  
+</script>
