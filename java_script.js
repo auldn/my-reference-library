@@ -243,6 +243,17 @@ function firstAuthorLabelOf(r){
   return label.trim() || 'Unknown Author';
 }
 
+function seniorAuthorLabelOf(r){
+  if(!Array.isArray(r.authors) || r.authors.length === 0) return 'Unknown Senior Author';
+  const a = r.authors[r.authors.length - 1];
+  if(typeof a === 'string') return a.trim() || 'Unknown Senior Author';
+  const family = a.family || a.last || a.lastname || a.surname || '';
+  const given  = a.given  || a.first || a.forename || '';
+  const initials = given ? given.split(/\s+/).map(w => w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
+  const label = (family && initials) ? `${family}, ${initials}` : (family || given || 'Unknown Senior Author');
+  return label.trim() || 'Unknown Senior Author';
+}
+
 function bucketForYear(y){
   const n = parseInt(y, 10);
   if(!n) return 'Unknown Year';
@@ -257,7 +268,8 @@ function compareBy(sortKey){
     switch(sortKey){
       case 'title_az': case 'title_za': return r.title || '';
       case 'journal_az': return r.journal || '';
-      case 'author_az': return (formatAuthors(r.authors).split(';')[0] || '').trim();
+      case 'author_az':  return (firstAuthorLabelOf(r) || '');
+      case 'senior_az':  return (seniorAuthorLabelOf(r) || '');
       case 'year_asc': case 'year_desc': default: return parseInt(r.year,10) || 0;
     }
   }
@@ -291,9 +303,10 @@ function render(){
   const list = filteredAndSorted();
 
   // Decide grouping strategy
-  const groupByYear = (state.sort === 'year_desc' || state.sort === 'year_asc');
+  const groupByYear    = (state.sort === 'year_desc' || state.sort === 'year_asc');
   const groupByJournal = (state.sort === 'journal_az'); // group when Journal A–Z is active
-  const groupByAuthor = (state.sort === 'author_az');   // NEW: group when First author A–Z is active
+  const groupByAuthor  = (state.sort === 'author_az');   // group when First author A–Z is active
+  const groupBySenior  = (state.sort === 'senior_az');   // NEW: group when Senior author A–Z is active
 
   if (groupByYear) {
     const buckets = new Map();
@@ -353,18 +366,48 @@ function render(){
       grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
     }
   } else if (groupByAuthor) {
-    // ----- NEW: group by first author for First author A–Z sort -----
+    // Group by first author
     const buckets = new Map();
     for (const r of list){
       const label = firstAuthorLabelOf(r);
       if (!buckets.has(label)) buckets.set(label, []);
       buckets.get(label).push(r);
     }
-    // Sort author labels A–Z; keep "Unknown Author" at the end
     const coll = new Intl.Collator('en', { sensitivity: 'base' });
     const labels = Array.from(buckets.keys());
     labels.sort((a, b) => {
       const ua = (a === 'Unknown Author'), ub = (b === 'Unknown Author');
+      if (ua && ub) return 0;
+      if (ua) return 1;
+      if (ub) return -1;
+      return coll.compare(a, b);
+    });
+    for (const label of labels){
+      const grp = document.createElement('div'); grp.className='group';
+      const header = document.createElement('div'); header.className='group-header';
+      const h3 = document.createElement('h3'); h3.textContent = label;
+      const count = document.createElement('div'); count.className='group-count';
+      const arr = buckets.get(label);
+      arr.sort((a,b)=>{ const dy=(parseInt(b.year,10)||0)-(parseInt(a.year,10)||0); if (dy!==0) return dy; return coll.compare(a.title||'', b.title||''); });
+      count.textContent = `${arr.length} entr${arr.length===1?'y':'ies'}`;
+      header.appendChild(h3); header.appendChild(count);
+      const entries = document.createElement('div'); entries.className='entries';
+      header.addEventListener('click', ()=>{ entries.classList.toggle('hidden'); });
+      for (const r of arr) entries.appendChild(renderEntry(r));
+      grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
+    }
+  } else if (groupBySenior) {
+    // NEW: Group by senior (last) author
+    const buckets = new Map();
+    for (const r of list){
+      const label = seniorAuthorLabelOf(r);
+      if (!buckets.has(label)) buckets.set(label, []);
+      buckets.get(label).push(r);
+    }
+    const coll = new Intl.Collator('en', { sensitivity: 'base' });
+    const labels = Array.from(buckets.keys());
+    labels.sort((a, b) => {
+      const ua = (a === 'Unknown Senior Author'), ub = (b === 'Unknown Senior Author');
       if (ua && ub) return 0;
       if (ua) return 1; // push Unknown to bottom
       if (ub) return -1;
@@ -376,12 +419,8 @@ function render(){
       const h3 = document.createElement('h3'); h3.textContent = label;
       const count = document.createElement('div'); count.className='group-count';
       const arr = buckets.get(label);
-      // Secondary sort inside each author: Year descending, then Title A–Z for stability
-      arr.sort((a,b)=>{
-        const dy = (parseInt(b.year,10) || 0) - (parseInt(a.year,10) || 0);
-        if (dy !== 0) return dy;
-        return coll.compare(a.title || '', b.title || '');
-      });
+      // Secondary sort inside each senior author: Year ↓ then Title A–Z
+      arr.sort((a,b)=>{ const dy=(parseInt(b.year,10)||0)-(parseInt(a.year,10)||0); if (dy!==0) return dy; return coll.compare(a.title||'', b.title||''); });
       count.textContent = `${arr.length} entr${arr.length===1?'y':'ies'}`;
       header.appendChild(h3); header.appendChild(count);
       const entries = document.createElement('div'); entries.className='entries';
@@ -412,9 +451,9 @@ function renderEntry(r){
   const line = document.createElement('div');
   if(r.doi){
     const doiLink = `https://doi.org/${r.doi}`;
-    line.innerHTML = `<span class=\"ok\">•</span> <a class=\"link entry-title\" href=\"${doiLink}\" target=\"_blank\" rel=\"noopener\">${title}</a>`;
+    line.innerHTML = `<span class="ok">•</span> <a class="link entry-title" href="${doiLink}" target="_blank" rel="noopener">${title}</a>`;
   } else {
-    line.innerHTML = `<span class=\"ok\">•</span> <strong class=\"entry-title\">${title}</strong>`;
+    line.innerHTML = `<span class="ok">•</span> <strong class="entry-title">${title}</strong>`;
   }
 
   const meta = document.createElement('div'); meta.className='meta';
