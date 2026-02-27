@@ -1,4 +1,3 @@
-<script>
 // =============================
 //   Configuration & Constants
 // =============================
@@ -628,5 +627,3 @@ render();
   // 3) Incremental enrichment – only enrich incomplete records
   await enrichAllIncremental();
 })();
-  
-</script>
