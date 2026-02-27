@@ -529,20 +529,29 @@ async function pump(){
 // =============================
 // Cache (versioned)
 // =============================
-function packCache(){const lean = state.records.map(r|>{if (!r) return r; const{_abstract, _abstractShown, ...rest}=r; return rest; return { version: CACHE_VERSION, records: state.records }; }
+function packCache() {
+  // Strip transient fields before saving to localStorage
+  const lean = state.records.map(r => {
+    if (!r) return r;
+    const { _abstract, _abstractShown, ...rest } = r;
+    return rest;
+  });
+  return { version: CACHE_VERSION, records: lean };
+}
 
-function unpackCache(obj){
-  if(!obj || obj.version!==CACHE_VERSION || !Array.isArray(obj.records)) return null;
-  // Defensive: remove any lingering _abstract from older caches
+function unpackCache(obj) {
+  if (!obj || obj.version !== CACHE_VERSION || !Array.isArray(obj.records)) return null;
+  // Defensive: ensure transient fields are absent if older caches persist them
   return obj.records.map(r => {
-    if (r && r._abstract !== undefined) { try { delete r._abstract; } catch(_){} }
+    if (r && r._abstract !== undefined) { try { delete r._abstract; } catch (_) {} }
+    if (r && r._abstractShown !== undefined) { try { delete r._abstractShown; } catch (_) {} }
     return r;
   });
 }
 
 let _saveCacheTimer = null;
-function saveCacheDebounced(delay = 250){
-  if(_saveCacheTimer) clearTimeout(_saveCacheTimer);
+function saveCacheDebounced(delay = 250) {
+  if (_saveCacheTimer) clearTimeout(_saveCacheTimer);
   _saveCacheTimer = setTimeout(() => {
     _saveCacheTimer = null;
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(packCache())); } catch (e) {}
