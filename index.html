@@ -17,14 +17,11 @@
     input[type="text"], select{width:100%;padding:.5rem .6rem;border-radius:.5rem;border:1px solid var(--border);background:#0b1020;color:var(--text)}
     button{appearance:none;background:linear-gradient(90deg,#0891b2,#22d3ee);color:#082f49;border:none;border-radius:.6rem;padding:.5rem .8rem;font-weight:600;cursor:pointer}
     .status{font-size:.9rem;color:var(--muted);margin-top:.5rem;white-space:pre-line}
-    .group{margin:1rem 0;border:1px solid var(--border);border-radius:.75rem;overflow:hidden}
-    .group{position:relative}
-    .group-header{position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid #eee}
-    .entries{position:relative;z-index:1}
-    /*.group-header{display:flex;justify-content:space-between;align-items:center;background:#0b1020;padding:.6rem .8rem;cursor:pointer} */
+    .group{margin:1rem 0;border:1px solid var(--border);border-radius:.75rem;overflow:hidden;position:relative}
+    .group-header{position:sticky;top:0;z-index:2;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#0b1020;padding:.6rem .8rem;cursor:pointer} 
     .group-header h3{margin:0;font-size:1rem}
     .group-count{font-size:.85rem;color:var(--muted)}
-    .entries{padding:.5rem .8rem}
+    .entries{position:relative;z-index:1;padding:.5rem .8rem}
     .entry{border-top:1px dashed var(--border);padding:.6rem 0;line-height:1.45;font-size:0.96em}
     .entry:first-child{border-top:none}
     .entry-title{font-family:'Arima', system-ui; font-weight:700; font-size:1.2em}
