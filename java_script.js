@@ -29,12 +29,12 @@ function normalizePMID(raw){
 }
 
 function stripHtml(s){
-  return String(s || '').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  return String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 // Title similarity helpers
 function normalizeTitle(t){
-  return String(t || '').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+  return String(t || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 function titleWordSet(t){
   return new Set(normalizeTitle(t).split(' ').filter(w => w.length > 2));
