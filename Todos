@@ -1,0 +1,8 @@
+input: a paper 
+output: all cited works in that paper
+
+input: a keyword
+output: all matching papers
+
+input: categorizing papers manually
+output: new filter-by
