@@ -6,3 +6,6 @@ output: all matching papers
 
 input: categorizing papers manually
 output: new filter-by
+
+input: pubcrawler weekly search results
+output: automatic addition to records
