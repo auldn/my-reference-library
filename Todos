@@ -9,3 +9,6 @@ output: new filter-by
 
 input: pubcrawler weekly search results
 output: automatic addition to records
+
+issue: few records stored in cache
+fix: remove abstract text from cache
