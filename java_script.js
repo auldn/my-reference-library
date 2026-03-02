@@ -1,8 +1,8 @@
 // =============================
 // Configuration & Constants
 // =============================
-const CACHE_KEY = 'reflib_v8_inc';
-const CACHE_VERSION = 8; // bump to invalidate all cached data
+const CACHE_KEY = 'reflib_v9_inc';
+const CACHE_VERSION = 9; // bump to invalidate all cached data
 const CONTACT_EMAIL = 'example@users.noreply';
 const ID_QUEUE_FILE = 'id_queue_pmids.txt';
 // Concurrency and rate limiting (be kind to public APIs)
@@ -611,7 +611,7 @@ function packCache(){
   // Strip transient fields before saving to localStorage
   const lean = state.records.map(r => {
     if (!r) return r;
-    const { _abstract, _abstractShown, _authorsExpanded, ...rest } = r;
+    const { _abstract, _abstractShown, _authorsExpanded, raw, ...rest } = r;
     return rest;
   });
   return { version: CACHE_VERSION, records: lean };
