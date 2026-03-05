@@ -528,6 +528,14 @@ function renderEntry(r){
   } else {
     line.innerHTML = `<span class="ok">•</span> <strong class="entry-title">${title}</strong>`;
   }
+  // Append OA badge (when applicable)
+  if (r._oa) {
+    const badge = document.createElement('span');
+    badge.className = 'oa-badge';
+    badge.innerHTML = `<span class="oa-dot"></span> OA`;
+    line.appendChild(badge);
+  }
+
   const meta = document.createElement('div'); meta.className='meta';
   // Authors (with expand/collapse)
   const authorsWrap = document.createElement('span');
