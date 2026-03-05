@@ -36,6 +36,77 @@
     .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:.1rem .5rem;font-size:.8em;color:#a5b4fc;background:#0b1020}
     .kw{display:inline-block;border:1px solid #334155;background:#0b1020;color:#93c5fd;border-radius:999px;padding:.05rem .5rem;margin:.15rem .25rem 0 0;font-size:.78em}
     .kw-wrap{margin-top:.4rem}
+    
+
+  /* --- OA / non-OA abstract blocks --- */
+  .abstract {
+    margin-top: 0.5rem;
+    line-height: 1.45;
+  }
+  .abstract.hidden { display: none; }
+
+  .oa-abstract {
+    background: #f0fdf4;         /* green-50 */
+    border: 1px solid #bbf7d0;   /* green-200 */
+    border-radius: 6px;
+    padding: 0.75rem 0.9rem;
+    color: #064e3b;              /* green-900 */
+  }
+  .non-oa-abstract {
+    background: #f8fafc;         /* slate-50 */
+    border: 1px dashed #cbd5e1;  /* slate-300 */
+    border-radius: 6px;
+    padding: 0.75rem 0.9rem;
+  }
+  .oa-abstract .attribution {
+    margin-top: 0.6rem;
+    font-size: 0.875rem;
+    color: #065f46;              /* green-800 */
+    opacity: 0.9;
+  }
+
+  /* --- OA badge next to titles --- */
+  .oa-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 0.5rem;
+    padding: 0 0.35rem;
+    height: 1.1rem;
+    border-radius: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1;
+    color: #065f46;              /* green-800 */
+    background: #d1fae5;         /* green-100 */
+    border: 1px solid #a7f3d0;   /* green-200 */
+    vertical-align: middle;
+  }
+  .oa-badge .oa-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: #10b981;         /* green-500 */
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .entry-title { white-space: normal; }
+  .entry .ok { color: #16a34a; } /* left bullet */
+  .link { color: #1d4ed8; text-decoration: none; }
+  .link:hover { text-decoration: underline; }
+
+  /* Optional: keyword pills */
+  .kw-wrap { margin-top: 0.4rem; }
+  .kw {
+    display: inline-block;
+    margin: 0 0.35rem 0.35rem 0;
+    padding: 0.12rem 0.45rem;
+    font-size: 0.75rem;
+    border-radius: 999px;
+    background: #eef2ff;         /* indigo-50 */
+    color: #3730a3;              /* indigo-800 */
+    border: 1px solid #c7d2fe;   /* indigo-200 */
+  }
+
   </style>
 </head>
 <body>
