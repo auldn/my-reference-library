@@ -1,9 +1,13 @@
 // =============================
+// refliv_js_v02.js — OA-aware reference viewer with OA badge & label tweaks
+// =============================
+
+// =============================
 // Configuration & Constants
 // =============================
 const CACHE_KEY = 'reflib_v9_inc';
 const CACHE_VERSION = 9; // bump to invalidate all cached data
-const CONTACT_EMAIL = 'example@users.noreply';
+const CONTACT_EMAIL = 'auldn@gmail.com';
 const ID_QUEUE_FILE = 'id_queue_pmids.txt';
 
 // Concurrency and rate limiting (be kind to public APIs)
@@ -528,7 +532,7 @@ function renderEntry(r){
   } else {
     line.innerHTML = `<span class="ok">•</span> <strong class="entry-title">${title}</strong>`;
   }
-  // Append OA badge (when applicable)
+  // Append OA badge (UX enhancement)
   if (r._oa) {
     const badge = document.createElement('span');
     badge.className = 'oa-badge';
@@ -551,6 +555,7 @@ function renderEntry(r){
   meta.appendChild(jEl);
   meta.appendChild(sep2);
   meta.appendChild(yEl);
+
   const controls = document.createElement('div'); controls.className='row';
   const pmidWrap = document.createElement('div'); pmidWrap.className='pmid-wrap';
   const label = document.createElement('span'); label.textContent='PMID:';
@@ -561,13 +566,20 @@ function renderEntry(r){
     catch{ setStatus('Clipboard failed'); setTimeout(()=>setStatus(''),1500);} 
   });
   pmidWrap.appendChild(label); pmidWrap.appendChild(codeEl); pmidWrap.appendChild(copyBtn);
-  const absBtn=document.createElement('button'); absBtn.className='mini-btn'; absBtn.textContent=r._abstractShown?'Hide abstract':'Show abstract';
+
+  const absBtn=document.createElement('button'); absBtn.className='mini-btn';
+  // Label depends on OA vs non-OA and current visibility
+  absBtn.textContent = r._oa
+    ? (r._abstractShown ? 'Hide abstract' : 'Show abstract')
+    : (r._abstractShown ? 'Hide PubMed link' : 'Show PubMed link');
+
   const absContainer = document.createElement('div'); absContainer.className = 'abstract' + (r._abstractShown ? '' : ' hidden');
   if (r._abstractShown) {
     // content will be filled below after OA / non-OA decision
   } else {
     absContainer.textContent = '';
   }
+
   absBtn.addEventListener('click', async () => {
     if (!r._abstractShown) {
       if (r._oa) {
@@ -586,17 +598,20 @@ function renderEntry(r){
     }
     render();
   });
+
   // Keywords row
   const kwWrap = document.createElement('div'); kwWrap.className='kw-wrap';
   (Array.isArray(r.keywords) ? r.keywords : []).slice(0,24).forEach(kw => {
     const span = document.createElement('span'); span.className='kw'; span.textContent = kw; kwWrap.appendChild(span);
   });
+
   controls.appendChild(pmidWrap);
   controls.appendChild(absBtn);
   e.appendChild(line);
   e.appendChild(meta);
   e.appendChild(controls);
   if((r.keywords || []).length) e.appendChild(kwWrap);
+
   // Fill abstract container based on OA flag
   if (r._abstractShown) {
     if (r._oa && r._abstract) {
