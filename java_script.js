@@ -5,6 +5,7 @@ const CACHE_KEY = 'reflib_v9_inc';
 const CACHE_VERSION = 9; // bump to invalidate all cached data
 const CONTACT_EMAIL = 'example@users.noreply';
 const ID_QUEUE_FILE = 'id_queue_pmids.txt';
+
 // Concurrency and rate limiting (be kind to public APIs)
 const MAX_CONCURRENT = 2; // parallel lookups
 const MIN_DELAY_MS = 400; // ~2.5 req/s aggregate
@@ -13,15 +14,15 @@ const MIN_DELAY_MS = 400; // ~2.5 req/s aggregate
 // Normalization Helpers
 // =============================
 function normalizeDOI(raw){
-  if(!raw) return null;
+  if (!raw) return null;
   let s = String(raw).trim();
-  s = s.replace(/^https?:\/\/doi\.org\//i,'');       // strip domain prefix
-  s = s.replace(/^doi:\s*/i,'');                    // strip leading 'doi:'
-  s = s.replace(/[\s<>\[\]\(\)\u200B]+$/g,'');      // trailing whitespace/brackets/ZWS
+  s = s.replace(/^https?:\/\/doi\.org\//i,''); // strip domain prefix
+  s = s.replace(/^doi:\s*/i,''); // strip leading 'doi:'
+  s = s.replace(/[\s<>\[\]()\u200B]+$/g,''); // trailing whitespace/brackets/ZWS
   return s || null;
 }
 function normalizePMID(raw){
-  if(!raw) return null;
+  if (!raw) return null;
   const m = String(raw).trim().match(/\d+/);
   return m ? m[0] : null;
 }
@@ -31,6 +32,7 @@ function stripHtml(s){
     .replace(/\s+/g,' ')
     .trim();
 }
+
 // Title similarity helpers
 function normalizeTitle(t){
   return String(t || '')
@@ -52,6 +54,25 @@ function scoreTitleMatch(t1,t2){
 }
 
 // =============================
+// Open Access (OA) Helpers
+// =============================
+// Determine whether a CrossRef record has an open license
+function hasOpenLicense_CrossRef(it) {
+  const lic = it?.license;
+  if (!Array.isArray(lic)) return false;
+  return lic.some(l => {
+    const url = String(l?.URL || '').toLowerCase();
+    return url.includes('creativecommons.org');
+  });
+}
+// Determine whether a PubMed esummary result indicates a PMCID
+function extractPMCID(articleids) {
+  if (!Array.isArray(articleids)) return null;
+  const pmc = articleids.find(x => x?.idtype === 'pmcid');
+  return pmc?.value || null;
+}
+
+// =============================
 // API Clients
 // =============================
 async function crossrefByDOI(doi){
@@ -61,24 +82,28 @@ async function crossrefByDOI(doi){
     if(!res.ok) throw new Error(`CrossRef ${res.status}`);
     const json = await res.json();
     const it = json?.message;
-
     const title = Array.isArray(it?.title) ? it.title[0] : (it?.title || null);
     const journal = Array.isArray(it?.['container-title']) ? it['container-title'][0]
-                   : (it?.['container-title'] || it?.shortContainerTitle || null);
+      : (it?.['container-title'] || it?.shortContainerTitle || null);
     const dateParts = it?.issued?.['date-parts']?.[0]
-                   || it?.created?.['date-parts']?.[0]
-                   || [];
+      || it?.created?.['date-parts']?.[0]
+      || [];
     const year = dateParts[0]
-              || (it?.created?.['date-time'] ? new Date(it.created['date-time']).getFullYear() : null);
+      || (it?.created?.['date-time'] ? new Date(it.created['date-time']).getFullYear() : null);
     const authors = Array.isArray(it?.author) ? it.author.map(a => ({family:a.family, given:a.given})) : [];
     const abstract = it?.abstract ? stripHtml(it.abstract) : null;
-
-    return { title, journal, year, authors, doi, pmid:null, keywords:[], sources:['CrossRef'], raw:{crossref:it}, _abstract:abstract };
+    const hasOA = hasOpenLicense_CrossRef(it);
+    return {
+      title, journal, year, authors, doi, pmid:null, keywords:[],
+      sources:['CrossRef'],
+      raw:{crossref:it},
+      _abstract: abstract,   // transient; never cached
+      _oa: hasOA             // OA flag from CrossRef license
+    };
   }catch(err){
     return { title:null, journal:null, year:null, authors:[], doi, pmid:null, keywords:[], sources:['CrossRef(error)'], _abstract:null, _error:String(err) };
   }
 }
-
 async function pubmedSummaryByPMID(pmid){
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=json`;
   const res = await fetch(url);
@@ -86,25 +111,23 @@ async function pubmedSummaryByPMID(pmid){
   const json = await res.json();
   const s = json?.result?.[pmid];
   if(!s) throw new Error('No esummary result');
-
-  const title   = s?.title || null;
+  const title = s?.title || null;
   const journal = s?.fulljournalname || s?.source || null;
-  const yMatch  = String(s?.epubdate || s?.pubdate || s?.sortpubdate || '').match(/(19|20)\d{2}/);
-  const year    = yMatch ? parseInt(yMatch[0], 10) : null;
-
+  const yMatch = String(s?.epubdate || s?.pubdate || s?.sortpubdate || '').match(/(19|20)\d{2}/);
+  const year = yMatch ? parseInt(yMatch[0], 10) : null;
   const authors = Array.isArray(s?.authors)
     ? s.authors.map(a => ({
         family: (a?.name || '').split(' ')[0] || '',
         given : (a?.name || '').split(' ').slice(1).join(' ') || ''
       }))
     : [];
-
   let doi = null;
   if(Array.isArray(s?.articleids)){
     const doiId = s.articleids.find(x => x?.idtype === 'doi');
     if(doiId?.value) doi = doiId.value;
   }
-
+  // OA detection via PMCID (PubMed Central ID)
+  const pmcid = extractPMCID(s?.articleids);
   // Keywords or MeSH
   let keywords = [];
   if(Array.isArray(s?.keywords))
@@ -115,26 +138,27 @@ async function pubmedSummaryByPMID(pmid){
       .map(x => String(x || '').trim())
       .filter(Boolean);
   }
-  return { title, journal, year, authors, doi, pmid, keywords, sources:['PubMed'], raw:{pubmed:s} };
+  return {
+    title, journal, year, authors, doi, pmid, keywords,
+    sources:['PubMed'],
+    raw:{pubmed:s},
+    _pmcid: pmcid || null,
+    _oa: Boolean(pmcid) // any PMCID ⇒ treat abstract as OA for display purposes
+  };
 }
-
 // Single-fetch esearch, then esummary
 async function pubmedSearchByDOI(doi, recTitle) {
   const term = encodeURIComponent(doi);
   const sUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=${term}`;
-
   const sres = await fetch(sUrl);
   if (!sres.ok) throw new Error(`PubMed esearch ${sres.status}`);
   const sjson = await sres.json();
-
   const pmids = (sjson?.esearchresult?.idlist) || [];
   if (pmids.length === 0) throw new Error('No PMID found for DOI');
-
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${encodeURIComponent(pmids.join(','))}&retmode=json`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`PubMed esummary ${res.status}`);
   const json = await res.json();
-
   // Choose best match: exact DOI if present; otherwise title similarity
   let best = null, bestScore = -1;
   for (const id of pmids) {
@@ -152,7 +176,6 @@ async function pubmedSearchByDOI(doi, recTitle) {
   const pmid = String(best?.uid || pmids[0]);
   return pubmedSummaryByPMID(pmid);
 }
-
 async function pubmedAbstractByPMID(pmid){
   const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${encodeURIComponent(pmid)}&retmode=xml`;
   try{
@@ -175,16 +198,16 @@ function mergeRecords(a,b){
   const out = {...a};
   ['title','journal','year'].forEach(f => { if((!out[f] || out[f] === '—') && b && b[f]) out[f] = b[f]; });
   if((!out.authors || out.authors.length === 0) && b?.authors?.length) out.authors = b.authors;
-
-  out.doi  = normalizeDOI(out.doi)  || normalizeDOI(b?.doi)  || null;
+  out.doi = normalizeDOI(out.doi) || normalizeDOI(b?.doi) || null;
   out.pmid = normalizePMID(out.pmid) || normalizePMID(b?.pmid) || null;
-
   const ak = Array.isArray(out.keywords) ? out.keywords : [];
   const bk = Array.isArray(b?.keywords) ? b.keywords : [];
   out.keywords = Array.from(new Set([...ak, ...bk].map(x => String(x || '').trim()).filter(Boolean)));
-
   out.sources = Array.from(new Set([...(a.sources || []), ...((b && b.sources) || [])]));
   out._abstract = out._abstract || b?._abstract || null;
+  // Preserve OA flags / identifiers
+  out._oa = Boolean(out._oa || b?._oa);
+  out._pmcid = out._pmcid || b?._pmcid || null;
   out.raw = { ...(a.raw || {}), ...(b?.raw || {}) };
   return out;
 }
@@ -203,7 +226,7 @@ function addOrMerge(rec){
   rec.pmid = normalizePMID(rec.pmid);
   if(!Array.isArray(rec.keywords)) rec.keywords = [];
   const keys = [];
-  if(rec.doi)  keys.push(`doi:${rec.doi.toLowerCase()}`);
+  if(rec.doi) keys.push(`doi:${rec.doi.toLowerCase()}`);
   if(rec.pmid) keys.push(`pmid:${rec.pmid}`);
   let existing = null;
   for(const k of keys){ if(state.index.has(k)){ existing = state.index.get(k); break; } }
@@ -212,7 +235,7 @@ function addOrMerge(rec){
   }
   if(existing){
     const merged = mergeRecords(existing, rec);
-    if(merged.doi)  state.index.set(`doi:${merged.doi.toLowerCase()}`, merged);
+    if(merged.doi) state.index.set(`doi:${merged.doi.toLowerCase()}`, merged);
     if(merged.pmid) state.index.set(`pmid:${merged.pmid}`, merged);
     const idx = state.records.indexOf(existing);
     if(idx >= 0) state.records[idx] = merged;
@@ -220,7 +243,7 @@ function addOrMerge(rec){
   } else {
     rec.sources = Array.from(new Set(rec.sources || []));
     state.records.push(rec);
-    if(rec.doi)  state.index.set(`doi:${rec.doi.toLowerCase()}`, rec);
+    if(rec.doi) state.index.set(`doi:${rec.doi.toLowerCase()}`, rec);
     if(rec.pmid) state.index.set(`pmid:${rec.pmid}`, rec);
     return true;
   }
@@ -234,24 +257,22 @@ function formatAuthors(authors){
   return authors.map(a => {
     if(typeof a === 'string') return a;
     const family = a.family || a.last || a.lastname || a.surname || '';
-    const given  = a.given  || a.first || a.forename || '';
+    const given = a.given || a.first || a.forename || '';
     const initials = given ? given.split(/\s+/).map(w => w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
     return (family && initials) ? `${family}, ${initials}` : (family || given || '—');
   }).join('; ');
 }
-
 // NEW: helper to get author name array using same formatting as formatAuthors
 function authorNameArray(authors){
   if(!Array.isArray(authors) || authors.length === 0) return [];
   return authors.map(a => {
     if(typeof a === 'string') return a;
     const family = a.family || a.last || a.lastname || a.surname || '';
-    const given  = a.given  || a.first || a.forename || '';
+    const given = a.given || a.first || a.forename || '';
     const initials = given ? given.split(/\s+/).map(w => w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
     return (family && initials) ? `${family}, ${initials}` : (family || given || '—');
   });
 }
-
 function journalLabelOf(r){
   const j = (r.journal || '').trim();
   return j.length ? j : 'Unknown Journal';
@@ -261,7 +282,7 @@ function firstAuthorLabelOf(r){
   const a = r.authors[0];
   if(typeof a === 'string') return a.trim() || 'Unknown Author';
   const family = a.family || a.last || a.lastname || a.surname || '';
-  const given  = a.given  || a.first || a.forename || '';
+  const given = a.given || a.first || a.forename || '';
   const initials = given ? given.split(/\s+/).map(w => w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
   const label = (family && initials) ? `${family}, ${initials}` : (family || given || 'Unknown Author');
   return label.trim() || 'Unknown Author';
@@ -271,7 +292,7 @@ function seniorAuthorLabelOf(r){
   const a = r.authors[r.authors.length - 1];
   if(typeof a === 'string') return a.trim() || 'Unknown Senior Author';
   const family = a.family || a.last || a.lastname || a.surname || '';
-  const given  = a.given  || a.first || a.forename || '';
+  const given = a.given || a.first || a.forename || '';
   const initials = given ? given.split(/\s+/).map(w => w[0]).join('').replace(/[^A-Za-z]/g,'') : '';
   const label = (family && initials) ? `${family}, ${initials}` : (family || given || 'Unknown Senior Author');
   return label.trim() || 'Unknown Senior Author';
@@ -288,20 +309,20 @@ function compareBy(sortKey){
   function val(r){
     switch(sortKey){
       case 'title_az':
-      case 'title_za':   return r.title || '';
+      case 'title_za': return r.title || '';
       case 'journal_az': return r.journal || '';
-      case 'author_az':  return (firstAuthorLabelOf(r) || '');
-      case 'senior_az':  return (seniorAuthorLabelOf(r) || '');
+      case 'author_az': return (firstAuthorLabelOf(r) || '');
+      case 'senior_az': return (seniorAuthorLabelOf(r) || '');
       case 'year_asc':
       case 'year_desc':
-      default:           return parseInt(r.year,10) || 0;
+      default: return parseInt(r.year,10) || 0;
     }
   }
   return (a,b) => {
     const va = val(a), vb = val(b);
     if(sortKey === 'year_desc') return vb - va;
-    if(sortKey === 'year_asc')  return va - vb;
-    if(sortKey === 'title_za')  return coll.compare(vb, va);
+    if(sortKey === 'year_asc') return va - vb;
+    if(sortKey === 'title_za') return coll.compare(vb, va);
     return coll.compare(va, vb);
   };
 }
@@ -311,12 +332,11 @@ function filteredAndSorted(){
     if(!q) return true;
     const kws = (Array.isArray(r.keywords) ? r.keywords.join(' ') : '');
     return [r.title, r.journal, formatAuthors(r.authors), r.year?.toString(), r.doi, r.pmid, kws]
-           .some(f => f && String(f).toLowerCase().includes(q));
+      .some(f => f && String(f).toLowerCase().includes(q));
   }).slice();
   list.sort(compareBy(state.sort));
   return list;
 }
-
 function render(){
   const qEl = document.getElementById('queueIndicator');
   if(qEl) qEl.textContent = `Queue: ${state.queueSize}`;
@@ -324,13 +344,11 @@ function render(){
   if(!container) return;
   container.innerHTML = '';
   const list = filteredAndSorted();
-
   // Decide grouping strategy
-  const groupByYear    = (state.sort === 'year_desc' || state.sort === 'year_asc');
+  const groupByYear = (state.sort === 'year_desc' || state.sort === 'year_asc');
   const groupByJournal = (state.sort === 'journal_az'); // group when Journal A–Z is active
-  const groupByAuthor  = (state.sort === 'author_az');  // group when First author A–Z is active
-  const groupBySenior  = (state.sort === 'senior_az');  // group when Senior author A–Z is active
-
+  const groupByAuthor = (state.sort === 'author_az');   // group when First author A–Z is active
+  const groupBySenior = (state.sort === 'senior_az');   // group when Senior author A–Z is active
   if (groupByYear) {
     const buckets = new Map();
     for (const r of list){
@@ -379,7 +397,7 @@ function render(){
       const count = document.createElement('div'); count.className='group-count';
       const arr = buckets.get(label);
       // Secondary sort: Year descending (newest first)
-      arr.sort((a,b)=>(parseInt(b.year,10) || 0) - (parseInt(a.year,10) || 0));
+      arr.sort((a,b)=> (parseInt(b.year,10) || 0) - (parseInt(a.year,10) || 0));
       count.textContent = `${arr.length} entr${arr.length===1?'y':'ies'}`;
       header.appendChild(h3); header.appendChild(count);
       const entries = document.createElement('div'); entries.className='entries';
@@ -469,18 +487,15 @@ function render(){
     grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
   }
 }
-
 // NEW: render authors with truncate/expand for ≥ 7 authors
 function renderAuthors(container, record){
   const names = authorNameArray(record.authors);
   container.innerHTML = ''; // clear
   const showAll = Boolean(record._authorsExpanded);
   let display = names;
-
   if (names.length >= 7 && !showAll) {
     display = [...names.slice(0,3), '…', ...names.slice(-3)];
   }
-
   // Build "A; B; C … X; Y; Z"
   let first = true;
   for (const part of display){
@@ -491,7 +506,6 @@ function renderAuthors(container, record){
     span.textContent = part;
     container.appendChild(span);
   }
-
   if (names.length >= 7) {
     container.appendChild(document.createTextNode(' '));
     const btn = document.createElement('button');
@@ -502,13 +516,11 @@ function renderAuthors(container, record){
     container.appendChild(btn);
   }
 }
-
 function renderEntry(r){
   const e = document.createElement('div'); e.className='entry';
   const title = r.title || '(title unavailable)';
   const journal = r.journal || '—';
   const year = r.year || '—';
-
   const line = document.createElement('div');
   if(r.doi){
     const doiLink = `https://doi.org/${r.doi}`;
@@ -516,68 +528,95 @@ function renderEntry(r){
   } else {
     line.innerHTML = `<span class="ok">•</span> <strong class="entry-title">${title}</strong>`;
   }
-
   const meta = document.createElement('div'); meta.className='meta';
-
   // Authors (with expand/collapse)
   const authorsWrap = document.createElement('span');
   authorsWrap.className = 'authors';
   renderAuthors(authorsWrap, r);
-
   // Separator + journal + year
   const sep1 = document.createTextNode(' · ');
-  const jEl  = document.createElement('em'); jEl.textContent = journal;
+  const jEl = document.createElement('em'); jEl.textContent = journal;
   const sep2 = document.createTextNode(' · ');
-  const yEl  = document.createTextNode(String(year));
-
+  const yEl = document.createTextNode(String(year));
   meta.appendChild(authorsWrap);
   meta.appendChild(sep1);
   meta.appendChild(jEl);
   meta.appendChild(sep2);
   meta.appendChild(yEl);
-
   const controls = document.createElement('div'); controls.className='row';
   const pmidWrap = document.createElement('div'); pmidWrap.className='pmid-wrap';
   const label = document.createElement('span'); label.textContent='PMID:';
   const codeEl = document.createElement('code'); codeEl.textContent = r.pmid || '—';
   const copyBtn = document.createElement('button'); copyBtn.className='mini-btn'; copyBtn.textContent='📋'; if(!r.pmid) copyBtn.disabled = true;
   copyBtn.addEventListener('click', async () => {
-    try{ await navigator.clipboard.writeText(String(r.pmid)); setStatus('PMID copied'); setTimeout(()=>setStatus(''),1200);}
-    catch{ setStatus('Clipboard failed'); setTimeout(()=>setStatus(''),1500);}
+    try{ await navigator.clipboard.writeText(String(r.pmid)); setStatus('PMID copied'); setTimeout(()=>setStatus(''),1200);} 
+    catch{ setStatus('Clipboard failed'); setTimeout(()=>setStatus(''),1500);} 
   });
   pmidWrap.appendChild(label); pmidWrap.appendChild(codeEl); pmidWrap.appendChild(copyBtn);
-
   const absBtn=document.createElement('button'); absBtn.className='mini-btn'; absBtn.textContent=r._abstractShown?'Hide abstract':'Show abstract';
   const absContainer = document.createElement('div'); absContainer.className = 'abstract' + (r._abstractShown ? '' : ' hidden');
-  absContainer.textContent = r._abstractShown ? (r._abstract || '(No abstract available)') : '';
+  if (r._abstractShown) {
+    // content will be filled below after OA / non-OA decision
+  } else {
+    absContainer.textContent = '';
+  }
   absBtn.addEventListener('click', async () => {
-    if(!r._abstractShown){
-      setStatus('Fetching abstract...');
-      if(!r._abstract && r.pmid){ r._abstract = await pubmedAbstractByPMID(r.pmid); }
-      r._abstractShown = true; setStatus('');
+    if (!r._abstractShown) {
+      if (r._oa) {
+        setStatus('Fetching OA abstract...');
+        if (!r._abstract && r.pmid) {
+          r._abstract = await pubmedAbstractByPMID(r.pmid);
+        }
+        r._abstractShown = true;
+        setStatus('');
+      } else {
+        // Non‑OA: just reveal the "View on PubMed" link (built in render below)
+        r._abstractShown = true;
+      }
     } else {
       r._abstractShown = false;
     }
     render();
   });
-
   // Keywords row
   const kwWrap = document.createElement('div'); kwWrap.className='kw-wrap';
   (Array.isArray(r.keywords) ? r.keywords : []).slice(0,24).forEach(kw => {
     const span = document.createElement('span'); span.className='kw'; span.textContent = kw; kwWrap.appendChild(span);
   });
-
   controls.appendChild(pmidWrap);
   controls.appendChild(absBtn);
-
   e.appendChild(line);
   e.appendChild(meta);
   e.appendChild(controls);
   if((r.keywords || []).length) e.appendChild(kwWrap);
+  // Fill abstract container based on OA flag
+  if (r._abstractShown) {
+    if (r._oa && r._abstract) {
+      // OA abstract with attribution (not cached; transient)
+      const html = `
+        <div class="oa-abstract">
+          ${String(r._abstract).replace(/\n/g, '<br>')}
+          <div class="attribution">
+            <em>Open‑access abstract provided via NLM E‑utilities and/or CrossRef. Abstract text © publisher or authors; redistributed under the applicable open license.</em>
+          </div>
+        </div>
+      `;
+      absContainer.innerHTML = html;
+    } else {
+      // Non‑OA: provide a direct link to PubMed
+      const url = r.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${r.pmid}/` : '#';
+      absContainer.innerHTML = `
+        <div class="non-oa-abstract">
+          <a class="link" href="${url}" target="_blank" rel="noopener">View abstract on PubMed (not open‑access)</a>
+        </div>
+      `;
+    }
+  } else {
+    absContainer.innerHTML = '';
+  }
   e.appendChild(absContainer);
   return e;
 }
-
 function setStatus(msg){
   const el = document.getElementById('status');
   if(el) el.textContent = msg || '';
@@ -619,8 +658,8 @@ function packCache(){
 function unpackCache(obj){
   if(!obj || obj.version!==CACHE_VERSION || !Array.isArray(obj.records)) return null;
   return obj.records.map(r => {
-    if (r && r._abstract !== undefined)       { try { delete r._abstract; } catch(_){} }
-    if (r && r._abstractShown !== undefined)  { try { delete r._abstractShown; } catch(_){} }
+    if (r && r._abstract !== undefined) { try { delete r._abstract; } catch(_){} }
+    if (r && r._abstractShown !== undefined) { try { delete r._abstractShown; } catch(_){} }
     if (r && r._authorsExpanded !== undefined){ try { delete r._authorsExpanded; } catch(_){} }
     return r;
   });
@@ -760,23 +799,19 @@ function wireUI(){
   const resetEl = document.getElementById('reset');
   const addBtn = document.getElementById('addId');
   const idInput = document.getElementById('idInput');
-
   // Search, sort, reset
   if(searchEl) searchEl.addEventListener('input', e=>{ state.query = e.target.value; saveCacheDebounced(); render(); });
   if(sortEl) sortEl.addEventListener('change', e=>{ state.sort = e.target.value; saveCacheDebounced(); render(); });
   if(resetEl) resetEl.addEventListener('click', ()=>{ state.query=''; if(searchEl) searchEl.value=''; state.sort='year_desc'; if(sortEl) sortEl.value='year_desc'; saveCacheDebounced(); render(); });
-
   // Online/offline indicator
   const onlinePill = document.getElementById('netIndicator');
   function updateNet(){ if(!onlinePill) return; onlinePill.textContent = navigator.onLine ? 'Online' : 'Offline'; onlinePill.style.color = navigator.onLine ? '#a7f3d0' : '#fecaca'; }
   window.addEventListener('online', updateNet);
   window.addEventListener('offline', updateNet);
   updateNet();
-
   // Add-by-ID interactions
   if(addBtn) addBtn.addEventListener('click', addById);
   if(idInput) idInput.addEventListener('keydown', e=>{ if (e.key === 'Enter') addById(); });
-
   // Optional: hook up "Download PMIDs" button if present
   const dlBtn = document.getElementById('downloadPmids');
   if (dlBtn) dlBtn.addEventListener('click', downloadAllPmids);
@@ -800,6 +835,7 @@ async function addById(){
     if(el) el.value = '';
   }catch(err){ setStatus('Failed to add entry.'); }
 }
+
 (async function(){
   wireUI();
   // 1) Load cache first for an instant enriched view (if available)
@@ -812,7 +848,7 @@ async function addById(){
         state.records = cached;
         state.index = new Map();
         for (const r of state.records) {
-          if (r.doi)  state.index.set(`doi:${String(r.doi).toLowerCase()}`, r);
+          if (r.doi) state.index.set(`doi:${String(r.doi).toLowerCase()}`, r);
           if (r.pmid) state.index.set(`pmid:${r.pmid}`, r);
         }
         console.log('[cache] startup summary → records:', state.records.length,
