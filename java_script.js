@@ -229,6 +229,7 @@ function addOrMerge(rec){
   rec.doi = normalizeDOI(rec.doi);
   rec.pmid = normalizePMID(rec.pmid);
   if(!Array.isArray(rec.keywords)) rec.keywords = [];
+  if(!Array.isArray(rec.tags)) rec.tags = [];   // NEW: user tags
   const keys = [];
   if(rec.doi) keys.push(`doi:${rec.doi.toLowerCase()}`);
   if(rec.pmid) keys.push(`pmid:${rec.pmid}`);
@@ -335,8 +336,17 @@ function filteredAndSorted(){
   const list = state.records.filter(r => {
     if(!q) return true;
     const kws = (Array.isArray(r.keywords) ? r.keywords.join(' ') : '');
-    return [r.title, r.journal, formatAuthors(r.authors), r.year?.toString(), r.doi, r.pmid, kws]
-      .some(f => f && String(f).toLowerCase().includes(q));
+    return [
+  r.title,
+  r.journal,
+  formatAuthors(r.authors),
+  r.year?.toString(),
+  r.doi,
+  r.pmid,
+  kws,
+  (r.tags || []).join(' ')        // NEW: search tags
+]
+.some(f => f && String(f).toLowerCase().includes(q));
   }).slice();
   list.sort(compareBy(state.sort));
   return list;
@@ -612,6 +622,53 @@ function renderEntry(r){
   e.appendChild(controls);
   if((r.keywords || []).length) e.appendChild(kwWrap);
 
+// --- TAGS UI (NEW) ---
+const tagWrap = document.createElement('div');
+tagWrap.className = 'tag-wrap';
+
+(r.tags || []).forEach(t => {
+  const span = document.createElement('span');
+  span.className = 'tag';
+  span.textContent = t;
+ span.addEventListener('click', () => {
+   r.tags = r.tags.filter(x => x !== t);
+    saveCacheDebounced();
+   render();
+ });
+ span.title = 'Click to remove tag';
+  tagWrap.appendChild(span);
+});
+
+// input + button
+const tagInput = document.createElement('input');
+tagInput.type = 'text';
+tagInput.placeholder = 'Add tag…';
+tagInput.className = 'tag-input';
+
+const tagBtn = document.createElement('button');
+tagBtn.className = 'mini-btn';
+tagBtn.textContent = '+';
+
+tagBtn.addEventListener('click', () => {
+  const val = tagInput.value.trim();
+  if (!val) return;
+  if (!r.tags.includes(val)) {
+    r.tags.push(val);
+    saveCacheDebounced();
+    render();
+  }
+  tagInput.value = '';
+});
+
+tagInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') tagBtn.click();
+});
+
+tagWrap.appendChild(tagInput);
+tagWrap.appendChild(tagBtn);
+
+e.appendChild(tagWrap);
+
   // Fill abstract container based on OA flag
   if (r._abstractShown) {
     if (r._oa && r._abstract) {
@@ -683,6 +740,7 @@ function unpackCache(obj){
   return obj.records.map(r => {
     if (r && r._abstract !== undefined) { try { delete r._abstract; } catch(_){} }
     if (r && r._abstractShown !== undefined) { try { delete r._abstractShown; } catch(_){} }
+    if (!Array.isArray(r.tags)) r.tags = [];  // ensure tags loaded from cache
     if (r && r._authorsExpanded !== undefined){ try { delete r._authorsExpanded; } catch(_){} }
     return r;
   });
