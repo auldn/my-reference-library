@@ -622,51 +622,68 @@ function renderEntry(r){
   e.appendChild(controls);
   if((r.keywords || []).length) e.appendChild(kwWrap);
 
-// --- TAGS UI (NEW) ---
+// --- TAGS UI (UPDATED) ---
 const tagWrap = document.createElement('div');
 tagWrap.className = 'tag-wrap';
 
-(r.tags || []).forEach(t => {
-  const span = document.createElement('span');
-  span.className = 'tag';
-  span.textContent = t;
- span.addEventListener('click', () => {
-   r.tags = r.tags.filter(x => x !== t);
+// Render tags
+(r.tags ?? []).forEach(t => {
+  const tagEl = document.createElement('span');
+  tagEl.className = 'tag';
+
+  // Tag text (click to filter)
+  const tagLabel = document.createElement('span');
+  tagLabel.textContent = t;
+  tagLabel.className = 'tag-label';
+  tagLabel.title = 'Click to filter by this tag';
+  tagLabel.addEventListener('click', () => {
+    state.query = t;
+    const searchEl = document.getElementById('search');
+    if (searchEl) searchEl.value = t;
+    render();
+  });
+
+  // Delete "×"
+  const del = document.createElement('span');
+  del.textContent = '×';
+  del.className = 'tag-delete';
+  del.title = 'Remove tag';
+  del.addEventListener('click', e => {
+    e.stopPropagation();         // Prevent tag click from filtering
+    r.tags = r.tags.filter(x => x !== t);
     saveCacheDebounced();
-   render();
- });
- span.title = 'Click to remove tag';
-  tagWrap.appendChild(span);
+    render();
+  });
+
+  tagEl.appendChild(tagLabel);
+  tagEl.appendChild(del);
+  tagWrap.appendChild(tagEl);
 });
 
-// input + button
+// --- TAG INPUT (moved next to Show Abstract) ---
 const tagInput = document.createElement('input');
 tagInput.type = 'text';
 tagInput.placeholder = 'Add tag…';
 tagInput.className = 'tag-input';
-
-const tagBtn = document.createElement('button');
-tagBtn.className = 'mini-btn';
-tagBtn.textContent = '+';
-
-tagBtn.addEventListener('click', () => {
-  const val = tagInput.value.trim();
-  if (!val) return;
-  if (!r.tags.includes(val)) {
-    r.tags.push(val);
-    saveCacheDebounced();
-    render();
-  }
-  tagInput.value = '';
-});
+tagInput.title = 'Press Enter to add tag';
 
 tagInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') tagBtn.click();
+  if (e.key === 'Enter') {
+    const val = tagInput.value.trim();
+    if (!val) return;
+    if (!r.tags.includes(val)) {
+      r.tags.push(val);
+      saveCacheDebounced();
+      render();
+    }
+    tagInput.value = '';
+  }
 });
 
-tagWrap.appendChild(tagInput);
-tagWrap.appendChild(tagBtn);
+// Instead of placing in tagWrap, insert this field beside the abstract button
+controls.appendChild(tagInput);
 
+// Add tagWrap after keywords
 e.appendChild(tagWrap);
 
   // Fill abstract container based on OA flag
