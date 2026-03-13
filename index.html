@@ -173,6 +173,27 @@
   align-items: center;
   gap: 8px;             /* already present; adjust if needed */
 }
+
+    /* Keep the Add-tag input compact within the controls row */
+.row > .tag-input {
+  flex: 0 0 auto;
+  width: 160px;        /* adjust to taste */
+  max-width: 40vw;     /* keeps it usable on smaller screens */
+}
+
+/* Tags layout: inline with the input when placed inside .row */
+.row .tag-wrap {
+  margin-top: 0;       /* no vertical offset inside the controls row */
+  display: inline-flex;
+  flex-wrap: wrap;     /* wrap to next line only if the row runs out of space */
+  gap: 6px;
+}
+
+/* (Optional) Slightly reduce spacing in the controls row if needed */
+.row {
+  align-items: center;
+  gap: 8px;
+}
   </style>
 </head>
 <body>
