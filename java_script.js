@@ -683,8 +683,8 @@ tagInput.addEventListener('keydown', e => {
 // Instead of placing in tagWrap, insert this field beside the abstract button
 controls.appendChild(tagInput);
 
-// Add tagWrap after keywords
-e.appendChild(tagWrap);
+// Add tagWrap next to keywords
+controls.appendChild(tagWrap);
 
   // Fill abstract container based on OA flag
   if (r._abstractShown) {
