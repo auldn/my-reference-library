@@ -570,13 +570,6 @@ function renderEntry(r){
   } else {
     line.innerHTML = `<span class="ok">•</span> <strong class="entry-title">${title}</strong>`;
   }
-  // Append OA badge (UX enhancement)
-  if (r._oa) {
-    const badge = document.createElement('span');
-    badge.className = 'oa-badge';
-    badge.innerHTML = `<span class="oa-dot"></span> OA`;
-    line.appendChild(badge);
-  }
 
   const meta = document.createElement('div'); meta.className='meta';
   // Authors (with expand/collapse)
@@ -610,6 +603,22 @@ function renderEntry(r){
   absBtn.textContent = r._oa
     ? (r._abstractShown ? 'Hide abstract' : 'Show abstract')
     : (r._abstractShown ? 'Hide PubMed link' : 'Show PubMed link');
+
+  
+  // === OA BADGE moved here (BEFORE absBtn) ===
+  if (r._oa) {
+    const oaBeforeBtn = document.createElement('span');
+    oaBeforeBtn.className = 'oa-badge';
+    oaBeforeBtn.innerHTML = `<span class="oa-dot"></span> OA`;
+    // insert into the controls row before the abstract button
+    controls.appendChild(pmidWrap);
+    controls.appendChild(oaBeforeBtn);   // <-- badge sits here now
+    controls.appendChild(absBtn);
+  } else {
+    // non‑OA: no badge
+    controls.appendChild(pmidWrap);
+    controls.appendChild(absBtn);
+  }
 
   const absContainer = document.createElement('div'); absContainer.className = 'abstract' + (r._abstractShown ? '' : ' hidden');
   if (r._abstractShown) {
