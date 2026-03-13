@@ -161,7 +161,18 @@
 .tag-delete:hover {
   color: #fca5a5;
 }
+    /* Keep inputs in control rows from stretching unless explicitly wide */
+.row > .tag-input {
+  flex: 0 0 auto;       /* don't grow, don't shrink */
+  width: 160px;         /* pick a tidy width */
+  max-width: 40vw;      /* responsive cap on smaller screens */
+}
 
+/* Optional: slightly tighten the controls row so items sit nicely */
+.row {
+  align-items: center;
+  gap: 8px;             /* already present; adjust if needed */
+}
   </style>
 </head>
 <body>
