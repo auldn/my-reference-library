@@ -223,7 +223,7 @@ function titleNearDuplicate(a,b){
 // =============================
 // State
 // =============================
-const state = { records:[], index:new Map(), sort:'year_desc', query:'', queueSize:0 };
+const state = { records:[], index:new Map(), sort:'year_desc', query:'', queueSize:0, tagFilter: '' };
 function addOrMerge(rec){
   rec = {...rec};
   rec.doi = normalizeDOI(rec.doi);
@@ -334,6 +334,10 @@ function compareBy(sortKey){
 function filteredAndSorted(){
   const q = (state.query || '').toLowerCase();
   const list = state.records.filter(r => {
+  // Tag filter first
+  if (state.tagFilter && !(r.tags ?? []).includes(state.tagFilter)) {
+    return false;
+  }
     if(!q) return true;
     const kws = (Array.isArray(r.keywords) ? r.keywords.join(' ') : '');
     return [
@@ -350,6 +354,27 @@ function filteredAndSorted(){
   }).slice();
   list.sort(compareBy(state.sort));
   return list;
+}
+
+function updateTagDropdown() {
+  const sel = document.getElementById('tagFilter');
+  if (!sel) return;
+
+  const allTags = new Set();
+  for (const r of state.records) {
+    (r.tags ?? []).forEach(t => allTags.add(t));
+  }
+
+  const current = state.tagFilter;
+  sel.innerHTML = '<option value="">All tags</option>';
+
+  Array.from(allTags).sort().forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t;
+    opt.textContent = t;
+    if (t === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
 }
 function render(){
   const qEl = document.getElementById('queueIndicator');
@@ -500,6 +525,9 @@ function render(){
     for (const r of list) entries.appendChild(renderEntry(r));
     grp.appendChild(header); grp.appendChild(entries); container.appendChild(grp);
   }
+  
+  updateTagDropdown();
+
 }
 // NEW: render authors with truncate/expand for ≥ 7 authors
 function renderAuthors(container, record){
@@ -636,12 +664,19 @@ tagWrap.className = 'tag-wrap';
   tagLabel.textContent = t;
   tagLabel.className = 'tag-label';
   tagLabel.title = 'Click to filter by this tag';
+  
   tagLabel.addEventListener('click', () => {
-    state.query = t;
+    state.query = '';
     const searchEl = document.getElementById('search');
-    if (searchEl) searchEl.value = t;
+    if (searchEl) searchEl.value = '';
+
+    state.tagFilter = t;
+    const tagSel = document.getElementById('tagFilter');
+    if (tagSel) tagSel.value = t;
+
     render();
   });
+
 
   // Delete "×"
   const del = document.createElement('span');
@@ -913,7 +948,17 @@ function wireUI(){
   // Optional: hook up "Download PMIDs" button if present
   const dlBtn = document.getElementById('downloadPmids');
   if (dlBtn) dlBtn.addEventListener('click', downloadAllPmids);
+
+  const tagSel = document.getElementById('tagFilter');
+  if (tagSel) {
+    tagSel.addEventListener('change', e => {
+      state.tagFilter = e.target.value;
+      saveCacheDebounced();
+      render();
+    });
+  }
 }
+
 function classifyId(input){
   const v = String(input || '').trim();
   if(/^\d+$/.test(v)) return {type:'pmid', id:v};
