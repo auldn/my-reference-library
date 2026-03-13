@@ -123,6 +123,9 @@
 }
 
 .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: #1e293b;
   border: 1px solid #334155;
   color: #cbd5e1;
@@ -139,6 +142,26 @@
   color: #dbe4f3;
   width: 80px;
 }
+
+
+.tag-label {
+  cursor: pointer;
+}
+
+.tag-label:hover {
+  text-decoration: underline;
+}
+
+.tag-delete {
+  cursor: pointer;
+  color: #94a3b8;
+  margin-left: 3px;
+}
+
+.tag-delete:hover {
+  color: #fca5a5;
+}
+
   </style>
 </head>
 <body>
