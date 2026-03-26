@@ -230,6 +230,8 @@ function addOrMerge(rec){
   rec.pmid = normalizePMID(rec.pmid);
   if(!Array.isArray(rec.keywords)) rec.keywords = [];
   if(!Array.isArray(rec.tags)) rec.tags = [];   // NEW: user tags
+  // Ensure article_id field exists (first-class identifier)
+  if (typeof rec.article_id !== 'string') rec.article_id = '';
   const keys = [];
   if(rec.doi) keys.push(`doi:${rec.doi.toLowerCase()}`);
   if(rec.pmid) keys.push(`pmid:${rec.pmid}`);
@@ -347,6 +349,7 @@ function filteredAndSorted(){
   r.year?.toString(),
   r.doi,
   r.pmid,
+  r.article_id,
   kws,
   (r.tags || []).join(' ')        // NEW: search tags
 ]
@@ -564,12 +567,22 @@ function renderEntry(r){
   const journal = r.journal || '—';
   const year = r.year || '—';
   const line = document.createElement('div');
+
   if(r.doi){
     const doiLink = `https://doi.org/${r.doi}`;
     line.innerHTML = `<span class="ok">•</span> <a class="link entry-title" href="${doiLink}" target="_blank" rel="noopener">${title}</a>`;
   } else {
     line.innerHTML = `<span class="ok">•</span> <strong class="entry-title">${title}</strong>`;
   }
+
+  // Article ID badge (non-tag identifier)
+  if (r.article_id) {
+      const idBadge = document.createElement('span');
+      idBadge.className = 'article-id';
+      idBadge.textContent = r.article_id;
+      line.appendChild(idBadge);
+  }
+
   // Append OA badge (UX enhancement)
   if (r._oa) {
     const badge = document.createElement('span');
