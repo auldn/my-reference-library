@@ -533,7 +533,7 @@ function renderEntry(r) {
   controls.appendChild(pmidWrap);
   controls.appendChild(absBtn);
 
-  // ---- Tags UI ----
+// ---- Tags UI ----
 const tagWrap = document.createElement('div');
 tagWrap.className = 'tag-wrap';
 
