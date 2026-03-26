@@ -533,6 +533,61 @@ function renderEntry(r) {
   controls.appendChild(pmidWrap);
   controls.appendChild(absBtn);
 
+  // ---- Tags UI ----
+const tagWrap = document.createElement('div');
+tagWrap.className = 'tag-wrap';
+
+// Render existing tags
+(r.tags || []).forEach(t => {
+  const tagEl = document.createElement('span');
+  tagEl.className = 'tag';
+
+  const label = document.createElement('span');
+  label.className = 'tag-label';
+  label.textContent = t;
+
+  const del = document.createElement('span');
+  del.className = 'tag-delete';
+  del.textContent = '×';
+  del.title = 'Remove tag';
+
+  del.addEventListener('click', e => {
+    e.stopPropagation();
+    r.tags = r.tags.filter(x => x !== t);
+    saveCacheDebounced();
+    render();
+  });
+
+  tagEl.appendChild(label);
+  tagEl.appendChild(del);
+  tagWrap.appendChild(tagEl);
+});
+
+// Tag input
+const tagInput = document.createElement('input');
+tagInput.type = 'text';
+tagInput.className = 'tag-input';
+tagInput.placeholder = 'Add tag…';
+
+tagInput.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const val = tagInput.value.trim();
+  if (!val || r.tags.includes(val)) return;
+
+  r.tags.push(val);
+  saveCacheDebounced();
+
+  if (val.toLowerCase() === 'printed text' && !r.article_id) {
+    promptForArticleId(r);
+  }
+
+  render();
+  tagInput.value = '';
+});
+
+controls.appendChild(tagInput);
+controls.appendChild(tagWrap);
+
   // ---- Keywords ----
   const kwWrap = document.createElement('div');
   kwWrap.className = 'kw-wrap';
