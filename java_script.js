@@ -598,6 +598,39 @@ controls.appendChild(tagWrap);
     kwWrap.appendChild(span);
   });
 
+  // ---- Fill abstract container based on OA flag ----
+if (r._abstractShown) {
+  if (r._oa && r._abstract) {
+    // OA abstract
+    absContainer.innerHTML = `
+      <div class="oa-abstract">
+        ${String(r._abstract).replace(/\n/g, '<br>')}
+        <div class="attribution">
+          <em>
+            Open‑access abstract provided via NLM E‑utilities and/or CrossRef.
+            Abstract text © publisher or authors; redistributed under the applicable open license.
+          </em>
+        </div>
+      </div>
+    `;
+  } else {
+    // Non‑OA: PubMed link
+    const url = r.pmid
+      ? `https://pubmed.ncbi.nlm.nih.gov/${r.pmid}/`
+      : '#';
+
+    absContainer.innerHTML = `
+      <div class="non-oa-abstract">
+        <a class="link" href="${url}" target="_blank" rel="noopener">
+          View abstract on PubMed (not open‑access)
+        </a>
+      </div>
+    `;
+  }
+} else {
+  absContainer.innerHTML = '';
+}
+  
   // ---- Assemble entry ----
   e.appendChild(line);
   e.appendChild(meta);
