@@ -1,5 +1,5 @@
 // =============================
-// refliv_js_v02.js — OA-aware reference viewer with OA badge & label tweaks
+// refliv_js_v02.js — OA-aware reference viewer with OA badge and label tweaks
 // =============================
 
 // =============================
