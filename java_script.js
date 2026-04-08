@@ -480,7 +480,7 @@ function renderEntry(r) {
   pmidWrap.className = 'pmid-wrap';
 
   const label = document.createElement('span');
-  label.textContent = 'PMID:';
+  label.textContent = 'PMID: ';
 
   const codeEl = document.createElement('code');
   codeEl.textContent = r.pmid || '—';
