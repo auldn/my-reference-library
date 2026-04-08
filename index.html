@@ -30,7 +30,7 @@
     .row{display:flex;gap:0.5rem;align-items:center}
     code{background:#0b1020;padding:.2rem .4rem;border-radius:.3rem;border:1px solid var(--border)}
     .link{color:var(--accent);text-decoration:none}
-    .mini-btn{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:0.5rem;padding:0.3rem 0.5rem;font-size:.85em;cursor:pointer;line-height:1;}
+    .mini-btn{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:0.5rem;font-size:.85em;cursor:pointer;}
     
 .pmid-wrap code {
   line-height: 1;
@@ -151,9 +151,6 @@
 }
 
 .tag-input {
-  line-height: 1;
-  padding: 0.3rem 0.4rem;
-  font-size: inherit;
   height: auto;
   border-radius: 6px;
   border: 1px solid #334155;
@@ -162,7 +159,13 @@
   width: 80px;
 }
 
-
+    .mini-btn,
+    .tag-input {
+  line-height: 1;
+  padding: 0.3rem 0.5rem;
+  font-size: inherit;
+    }
+      
 .tag-label {
   cursor: pointer;
 }
