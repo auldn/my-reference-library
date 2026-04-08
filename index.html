@@ -6,41 +6,185 @@
   <title>My Reference Library</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Arima:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    :root{ --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee; --border:#1f2937; --ok:#34d399; --warn:#fbbf24; --err:#f87171; }
-    html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";}
-    h1{font-family:'Playfair Display', serif;font-size:1.92rem;margin:.5rem 0 1rem 0}
-    .wrap{max-width:1100px;margin:0 auto;padding:1rem}
-    .controls{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
-    .control-card{background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1rem}
-    .control-card h2{font-size:1.05rem;margin:0 0 .5rem 0}
-    label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.25rem}
-    input[type="text"], select{width:100%;padding:.5rem .6rem;border-radius:.5rem;border:1px solid var(--border);background:#0b1020;color:var(--text)}
-    button{appearance:none;background:linear-gradient(90deg,#0891b2,#22d3ee);color:#082f49;border:none;border-radius:.6rem;padding:.5rem .8rem;font-weight:600;cursor:pointer}
-    .status{font-size:.9rem;color:var(--muted);margin-top:.5rem;white-space:pre-line}
-    .group{margin:1rem 0;border:1px solid var(--border);border-radius:.75rem;position:relative}
-    .group-header{position:sticky;top:0;z-index:2;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#0b1020;padding:.6rem .8rem;cursor:pointer} 
-    .group-header h3{margin:0;font-size:1rem}
-    .group-count{font-size:.85rem;color:var(--muted)}
-    .entries{position:relative;z-index:1;padding:.5rem .8rem}
-    .entry{border-top:1px dashed var(--border);padding:.6rem 0;line-height:1.45;font-size:0.96em}
-    .entry:first-child{border-top:none}
-    .entry-title{font-family:'Arima', system-ui; font-weight:700; font-size:1.2em}
-    .meta{color:var(--muted)}
-    .hidden{display:none}
-    .row{display:flex;gap:0.5rem;align-items:center}
-    code{background:#0b1020;padding:.2rem .4rem;border-radius:.3rem;border:1px solid var(--border)}
-    .link{color:var(--accent);text-decoration:none}
-    .mini-btn{background:#1f2937;color:var(--text);border:1px solid var(--border);border-radius:0.5rem;font-size:.85em;cursor:pointer;}
+    :root{ 
+      --bg:#0f172a; 
+      --card:#111827; 
+      --text:#e5e7eb; 
+      --muted:#9ca3af; 
+      --accent:#22d3ee; 
+      --border:#1f2937; 
+      --ok:#34d399; 
+      --warn:#fbbf24; 
+      --err:#f87171; 
+    }
+    html,body{
+      background:var(--bg);
+              color:var(--text);
+              font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+             }
+    h1{
+      font-family:'Playfair Display', serif;
+       font-size:1.92rem;
+       margin:.5rem 0 1rem 0;
+      }
+    .wrap{
+      max-width:1100px;
+          margin:0 auto;
+          padding:1rem;
+         }
+    .controls{
+      display:grid;
+              grid-template-columns:1fr 1fr;
+              gap:1rem;
+              margin-bottom:1rem;
+             }
+    .control-card{
+      background:var(--card);
+                  border:1px solid var(--border);
+                  border-radius:.75rem;
+                  padding:1rem;
+                 }
+    .control-card h2{
+      font-size:1.05rem;
+                     margin:0 0 .5rem 0;
+                    }
+    label{
+      display:block;
+          font-size:.9rem;
+          color:var(--muted);
+          margin-bottom:.25rem;
+         }
+    input[type="text"], select{
+      width:100%;
+                               padding:.5rem .6rem;
+                               border-radius:.5rem;
+                               border:1px solid var(--border);
+                               background:#0b1020;
+                               color:var(--text);
+                              }
+    button{
+      appearance:none;
+           background:linear-gradient(90deg,#0891b2,#22d3ee);
+           color:#082f49;
+           border:none;
+           border-radius:.6rem;
+           padding:.5rem .8rem;font-weight:600;
+           cursor:pointer;
+          }
+    .status{
+      font-size:.9rem;
+            color:var(--muted);
+            margin-top:.5rem;
+            white-space:pre-line;
+           }
+    .group{
+      margin:1rem 0;
+           border:1px solid var(--border);
+           border-radius:.75rem;
+           position:relative;
+          }
+    .group-header{
+      position:sticky;
+                  top:0;
+                  z-index:2;
+                  background:var(--card);
+                  border-bottom:1px solid var(--border);
+                  display:flex;
+                  justify-content:space-between;
+                  align-items:center;
+                  background:#0b1020;
+                  padding:.6rem .8rem;
+                  cursor:pointer;
+                 } 
+    .group-header h3{
+      margin:0;
+                     font-size:1rem;
+                    }
+    .group-count{
+      font-size:.85rem;
+                 color:var(--muted);
+                }
+    .entries{
+      position:relative;
+             z-index:1;
+             padding:.5rem .8rem;
+            }
+    .entry{
+      border-top:1px dashed var(--border);
+           padding:.6rem 0;
+           line-height:1.45;
+           font-size:0.96em;
+          }
+    .entry:first-child{
+      border-top:none;
+                      }
+    .entry-title{
+      font-family:'Arima', system-ui;
+                 font-weight:700;
+                 font-size:1.2em;
+                }
+    .meta{
+      color:var(--muted);
+         }
+    .hidden{
+      display:none;
+           }
+    .row{
+      display:flex;
+         gap:0.5rem;
+         align-items:center;
+        }
+    code{
+      background:#0b1020;
+         padding:.2rem .4rem;
+         border-radius:.3rem;
+         border:1px solid var(--border);
+        }
+    .link{
+      color:var(--accent);
+          text-decoration:none;
+         }
+    .mini-btn{
+      background:#1f2937;
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:0.5rem;
+      font-size:.85em;
+      cursor:pointer;
+    }
     
 .pmid-wrap code {
   line-height: 1;
   padding: 0.25rem 0.4rem;
 }
 
-    .abstract{margin-top:.4rem;color:#cbd5e1;white-space:pre-wrap}
-    .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:.1rem .5rem;font-size:.8em;color:#a5b4fc;background:#0b1020}
-    .kw{display:inline-block;border:1px solid #334155;background:#0b1020;color:#93c5fd;border-radius:999px;padding:.05rem .5rem;margin:.15rem .25rem 0 0;font-size:.78em}
-    .kw-wrap{margin-top:.4rem}
+    .abstract{
+      margin-top:.4rem;
+              color:#cbd5e1;
+              white-space:pre-wrap;
+             }
+    .pill{
+      display:inline-block;
+          border:1px solid var(--border);
+          border-radius:999px;
+          padding:.1rem .5rem;
+          font-size:.8em;
+          color:#a5b4fc;
+          background:#0b1020;
+         }
+    .kw{
+      display:inline-block;
+        border:1px solid #334155;
+        background:#0b1020;
+        color:#93c5fd;
+        border-radius:999px;
+        padding:.05rem .5rem;
+        margin:.15rem .25rem 0 0;
+        font-size:.78em;
+       }
+    .kw-wrap{
+      margin-top:.4rem;
+            }
 
   /* --- OA / non-OA abstract blocks --- */
   .abstract {
@@ -151,7 +295,6 @@
 }
 
 .tag-input {
-  height: auto;
   border-radius: 6px;
   border: 1px solid #334155;
   background: #0b1220;
@@ -159,12 +302,17 @@
   width: 80px;
 }
 
-    .mini-btn,
-    .tag-input {
+.mini-btn,
+.tag-input {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: inherit;
   line-height: 1;
   padding: 0.3rem 0.5rem;
-  font-size: inherit;
-    }
+  border: 1px solid currentColor;
+}
       
 .tag-label {
   cursor: pointer;
@@ -192,8 +340,9 @@
 
 /* Optional: slightly tighten the controls row so items sit nicely */
 .row {
+  display: flex;
   align-items: center;
-  gap: 8px;             /* already present; adjust if needed */
+  gap: 0.5rem;             /* already present; adjust if needed */
 }
 
     /* Keep the Add-tag input compact within the controls row */
