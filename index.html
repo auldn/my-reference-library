@@ -147,16 +147,11 @@
     .mini-btn{
       background:#1f2937;
       color:var(--text);
-      border:1px solid var(--border);
       border-radius:0.5rem;
-      font-size:.85em;
       cursor:pointer;
     }
     
-.pmid-wrap code {
-  line-height: 1;
-  padding: 0.25rem 0.4rem;
-}
+
 
     .abstract{
       margin-top:.4rem;
@@ -306,14 +301,22 @@
 .tag-input {
   appearance: none;
   -webkit-appearance: none;
+}
+
+
+.mini-btn,
+.tag-input,
+.pmid-wrap code {
+  display: inline-flex;
+  align-items: center;
   box-sizing: border-box;
   font-family: inherit;
   font-size: inherit;
   line-height: 1;
   padding: 0.3rem 0.5rem;
-  border: 1px solid currentColor;
 }
-      
+
+    
 .tag-label {
   cursor: pointer;
 }
@@ -332,12 +335,6 @@
   color: #fca5a5;
 }
     /* Keep inputs in control rows from stretching unless explicitly wide */
-.row > .tag-input {
-  flex: 0 0 auto;       /* don't grow, don't shrink */
-  width: 160px;         /* pick a tidy width */
-  max-width: 40vw;      /* responsive cap on smaller screens */
-}
-
 /* Optional: slightly tighten the controls row so items sit nicely */
 .row {
   display: flex;
@@ -347,7 +344,6 @@
 
     /* Keep the Add-tag input compact within the controls row */
 .row > .tag-input {
-  flex: 0 0 auto;
   width: 160px;        /* adjust to taste */
   max-width: 40vw;     /* keeps it usable on smaller screens */
 }
