@@ -6,252 +6,200 @@
   <title>My Reference Library</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Arima:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    :root{ 
-      --bg:#0f172a; 
-      --card:#111827; 
-      --text:#e5e7eb; 
-      --muted:#9ca3af; 
-      --accent:#22d3ee; 
-      --border:#1f2937; 
-      --ok:#34d399; 
-      --warn:#fbbf24; 
-      --err:#f87171; 
-    }
-    html,body{
-      background:var(--bg);
-              color:var(--text);
-              font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
-             }
-    h1{
-      font-family:'Playfair Display', serif;
-       font-size:1.92rem;
-       margin:.5rem 0 1rem 0;
-      }
-    .wrap{
-      max-width:1100px;
-          margin:0 auto;
-          padding:1rem;
-         }
-    .controls{
-      display:grid;
-              grid-template-columns:1fr 1fr;
-              gap:1rem;
-              margin-bottom:1rem;
-             }
-    .control-card{
-      background:var(--card);
-                  border:1px solid var(--border);
-                  border-radius:.75rem;
-                  padding:1rem;
-                 }
-    .control-card h2{
-      font-size:1.05rem;
-                     margin:0 0 .5rem 0;
-                    }
-    label{
-      display:block;
-          font-size:.9rem;
-          color:var(--muted);
-          margin-bottom:.25rem;
-         }
-    input[type="text"], select{
-      width:100%;
-                               padding:.5rem .6rem;
-                               border-radius:.5rem;
-                               border:1px solid var(--border);
-                               background:#0b1020;
-                               color:var(--text);
-                              }
-    button{
-      appearance:none;
-           background:linear-gradient(90deg,#0891b2,#22d3ee);
-           color:#082f49;
-           border:none;
-           border-radius:.6rem;
-           padding:.5rem .8rem;font-weight:600;
-           cursor:pointer;
-          }
-    .status{
-      font-size:.9rem;
-            color:var(--muted);
-            margin-top:.5rem;
-            white-space:pre-line;
-           }
-    .group{
-      margin:1rem 0;
-           border:1px solid var(--border);
-           border-radius:.75rem;
-           position:relative;
-          }
-    .group-header{
-      position:sticky;
-                  top:0;
-                  z-index:2;
-                  background:var(--card);
-                  border-bottom:1px solid var(--border);
-                  display:flex;
-                  justify-content:space-between;
-                  align-items:center;
-                  background:#0b1020;
-                  padding:.6rem .8rem;
-                  cursor:pointer;
-                 } 
-    .group-header h3{
-      margin:0;
-                     font-size:1rem;
-                    }
-    .group-count{
-      font-size:.85rem;
-                 color:var(--muted);
-                }
-    .entries{
-      position:relative;
-             z-index:1;
-             padding:.5rem .8rem;
-            }
-    .entry{
-      border-top:1px dashed var(--border);
-           padding:.6rem 0;
-           line-height:1.45;
-           font-size:0.96em;
-          }
-    .entry:first-child{
-      border-top:none;
-                      }
-    .entry-title{
-      font-family:'Arima', system-ui;
-                 font-weight:700;
-                 font-size:1.2em;
-                }
-    .meta{
-      color:var(--muted);
-         }
-    .hidden{
-      display:none;
-           }
-    .row{
-      display:flex;
-         gap:0.5rem;
-         align-items:center;
-        }
-    code{
-      background:#0b1020;
-         padding:.2rem .4rem;
-         border-radius:.3rem;
-         border:1px solid var(--border);
-        }
-    .link{
-      color:var(--accent);
-          text-decoration:none;
-         }
-    .mini-btn{
-      background:#1f2937;
-      color:var(--text);
-      border-radius:0.5rem;
-      cursor:pointer;
-    }
-    
+   /* =========================
+   CSS Variables / Theme
+   ========================= */
+:root {
+  --bg: #0f172a;
+  --card: #111827;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --accent: #22d3ee;
+  --border: #1f2937;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --err: #f87171;
+}
 
+/* =========================
+   Base / Global Styles
+   ========================= */
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
+    Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
 
-    .abstract{
-      margin-top:.4rem;
-              color:#cbd5e1;
-              white-space:pre-wrap;
-             }
-    .pill{
-      display:inline-block;
-          border:1px solid var(--border);
-          border-radius:999px;
-          padding:.1rem .5rem;
-          font-size:.8em;
-          color:#a5b4fc;
-          background:#0b1020;
-         }
-    .kw{
-      display:inline-block;
-        border:1px solid #334155;
-        background:#0b1020;
-        color:#93c5fd;
-        border-radius:999px;
-        padding:.05rem .5rem;
-        margin:.15rem .25rem 0 0;
-        font-size:.78em;
-       }
-    .kw-wrap{
-      margin-top:.4rem;
-            }
+h1 {
+  font-family: "Playfair Display", serif;
+  font-size: 1.92rem;
+  margin: 0.5rem 0 1rem;
+}
 
-  /* --- OA / non-OA abstract blocks --- */
-  .abstract {
-    margin-top: 0.5rem;
-    line-height: 1.45;
-  }
-  .abstract.hidden { display: none; }
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+}
 
-  .oa-abstract {
-    background: var(--card);         /* green-50 */
-    border: 1px solid var(--border);   
-    border-radius: 6px;
-    padding: 0.75rem 0.9rem;
-    color: var(--text);             
-  }
-  .non-oa-abstract {
-    background: var(--card);        
-    border: 1px dashed var(--border);  
-    border-radius: 6px;
-    padding: 0.75rem 0.9rem;
-    color: var(--text);
-  }
-  .oa-abstract .attribution {
-    margin-top: 0.6rem;
-    font-size: 0.875rem;
-    color: var(--muted);              /* green-800 */
-    opacity: 1;
-  }
+/* =========================
+   Control Panels
+   ========================= */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
 
-  /* --- OA badge next to titles --- */
-  .oa-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    margin-left: 0.5rem;
-    padding: 0 0.35rem;
-    height: 1.1rem;
-    border-radius: 0.4rem;
-    font-size: 0.72rem;
-    font-weight: 600;
-    line-height: 1;
-    color: #065f46;              /* green-800 */
-    background: #d1fae5;         /* green-100 */
-    border: 1px solid #a7f3d0;   /* green-200 */
-    vertical-align: middle;
-  }
-  .oa-badge .oa-dot {
-    width: 0.5rem;
-    height: 0.5rem;
-    background: #10b981;         /* green-500 */
-    border-radius: 50%;
-    display: inline-block;
-  }
-  .entry-title { white-space: normal; }
-  .entry .ok { color: #16a34a; } /* left bullet */
-  .link { text-decoration: none; }
+.control-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
 
-  /* Optional: keyword pills */
-  .kw-wrap { margin-top: 0.4rem; }
-  .kw {
-    display: inline-block;
-    margin: 0 0.35rem 0.35rem 0;
-    padding: 0.12rem 0.45rem;
-    font-size: 0.75rem;
-    border-radius: 999px;
-    background: #eef2ff;         /* indigo-50 */
-    color: #3730a3;              /* indigo-800 */
-    border: 1px solid #c7d2fe;   /* indigo-200 */
-  }
-/* Ensure ALL article titles use the original teal accent */
+.control-card h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.5rem;
+}
+
+label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+/* =========================
+   Inputs & Buttons
+   ========================= */
+input[type="text"],
+select {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: #0b1020;
+  color: var(--text);
+}
+
+button {
+  appearance: none;
+  background: linear-gradient(90deg, #0891b2, #22d3ee);
+  color: #082f49;
+  border: none;
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Compact inline controls (PMID / buttons / tag input) */
+.mini-btn,
+.tag-input,
+.pmid-wrap code {
+  appearance: none;
+  -webkit-appearance: none;
+
+  display: inline-flex;
+  align-items: center;
+
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1;
+
+  padding: 0.3rem 0.5rem;
+}
+
+/* Override generic text input sizing for tag input */
+input.tag-input {
+  width: 160px;
+  max-width: 40vw;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #0b1220;
+  color: #dbe4f3;
+}
+
+/* Button-specific visuals */
+.mini-btn {
+  background: #1f2937;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+/* =========================
+   Status / Feedback
+   ========================= */
+.status {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  white-space: pre-line;
+}
+
+/* =========================
+   Groups & Entries
+   ========================= */
+.group {
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  position: relative;
+}
+
+.group-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  background: #0b1020;
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+}
+
+.group-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.group-count {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.entries {
+  padding: 0.5rem 0.8rem;
+}
+
+.entry {
+  border-top: 1px dashed var(--border);
+  padding: 0.6rem 0;
+  font-size: 0.96em;
+  line-height: 1.45;
+}
+
+.entry:first-child {
+  border-top: none;
+}
+
 .entry-title {
+  font-family: "Arima", system-ui;
+  font-weight: 700;
+  font-size: 1.2em;
   color: var(--accent);
+  white-space: normal;
   text-decoration: none;
 }
 
@@ -259,19 +207,34 @@
   color: var(--accent);
 }
 
-.article-id {
-  margin-left: 0.5rem;
-  padding: 0.1rem 0.45rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.75rem;
-  border-radius: 4px;
-  background: #1f2937;
-  color: #a7f3d0;
+.entry .ok {
+  color: #16a34a;
 }
 
+.meta {
+  color: var(--muted);
+}
 
-.tag-wrap {
+/* =========================
+   Controls Row (PMID / Tags / Actions)
+   ========================= */
+.row {
   display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pmid-wrap code {
+  background: #0b1020;
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+}
+
+/* =========================
+   Tags
+   ========================= */
+.tag-wrap {
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem;
@@ -281,42 +244,16 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+
   background: #1e293b;
   border: 1px solid #334155;
   color: #cbd5e1;
+
   padding: 2px 6px;
   border-radius: 999px;
   font-size: 12px;
 }
 
-.tag-input {
-  border-radius: 6px;
-  border: 1px solid #334155;
-  background: #0b1220;
-  color: #dbe4f3;
-  width: 80px;
-}
-
-.mini-btn,
-.tag-input {
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-
-.mini-btn,
-.tag-input,
-.pmid-wrap code {
-  display: inline-flex;
-  align-items: center;
-  box-sizing: border-box;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: 1;
-  padding: 0.3rem 0.5rem;
-}
-
-    
 .tag-label {
   cursor: pointer;
 }
@@ -334,38 +271,92 @@
 .tag-delete:hover {
   color: #fca5a5;
 }
-    /* Keep inputs in control rows from stretching unless explicitly wide */
-/* Optional: slightly tighten the controls row so items sit nicely */
-.row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;             /* already present; adjust if needed */
+
+/* =========================
+   Keywords / Pills
+   ========================= */
+.kw-wrap {
+  margin-top: 0.4rem;
 }
 
-    /* Keep the Add-tag input compact within the controls row */
-.row > .tag-input {
-  width: 160px;        /* adjust to taste */
-  max-width: 40vw;     /* keeps it usable on smaller screens */
+.kw {
+  display: inline-block;
+  margin: 0 0.35rem 0.35rem 0;
+
+  padding: 0.12rem 0.45rem;
+  font-size: 0.75rem;
+
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
 }
 
-    .row input.tag-input {
-      padding: 0.3rem 0.5rem;
-      line-height: 1;
-    }
+/* =========================
+   Abstract Blocks
+   ========================= */
+.abstract {
+  margin-top: 0.5rem;
+  line-height: 1.45;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+}
 
-/* Tags layout: inline with the input when placed inside .row */
-.row .tag-wrap {
-  margin-top: 0;       /* no vertical offset inside the controls row */
+.abstract.hidden {
+  display: none;
+}
+
+.oa-abstract,
+.non-oa-abstract {
+  background: var(--card);
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+  color: var(--text);
+}
+
+.oa-abstract {
+  border: 1px solid var(--border);
+}
+
+.non-oa-abstract {
+  border: 1px dashed var(--border);
+}
+
+.oa-abstract .attribution {
+  margin-top: 0.6rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+/* =========================
+   OA Badge
+   ========================= */
+.oa-badge {
   display: inline-flex;
-  flex-wrap: wrap;     /* wrap to next line only if the row runs out of space */
-  gap: 6px;
+  align-items: center;
+  gap: 0.3rem;
+
+  margin-left: 0.5rem;
+  padding: 0 0.35rem;
+  height: 1.1rem;
+
+  border-radius: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+
+  color: #065f46;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
 }
 
-/* (Optional) Slightly reduce spacing in the controls row if needed */
-.row {
-  align-items: center;
-  gap: 8px;
+.oa-badge .oa-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background: #10b981;
+  border-radius: 50%;
 }
+
   </style>
 </head>
 <body>
